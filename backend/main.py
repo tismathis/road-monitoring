@@ -7,12 +7,23 @@ from fastapi.responses import StreamingResponse
 import time
 from camera_stream import start_camera_thread, get_latest_frame, get_counts, get_history, get_heatmap_points
 
+# Import parking stream functions
+# These handle the parking lot camera with spot detection
+from parking_stream import start_parking_thread, get_latest_parking_frame, get_parking_stats
+
 
 app = FastAPI()
 
 @app.on_event("startup")
 def startup_event():
-    start_camera_thread()
+    """
+    Initialize background threads when the server starts.
+
+    - start_camera_thread(): Starts vehicle detection camera
+    - start_parking_thread(): Starts parking lot monitoring
+    """
+    start_camera_thread()      # Traffic camera with YOLO vehicle detection
+    start_parking_thread()     # Parking lot with spot classification
     
 @app.get("/camera/history")
 def camera_history():
@@ -79,6 +90,76 @@ def camera_stream():
 @app.get("/camera/stats")
 def camera_stats():
     return get_counts()
+
+
+# =====================================================================
+# PARKING LOT ENDPOINTS
+# =====================================================================
+
+def parking_mjpeg_generator():
+    """
+    Generator function for Motion JPEG streaming of parking lot.
+
+    Yields:
+        JPEG frames in multipart format for continuous streaming
+
+    How it works:
+    - Continuously fetches the latest parking frame
+    - Wraps each frame in MJPEG format (multipart/x-mixed-replace)
+    - Browser displays frames as they arrive (like a video)
+    """
+    while True:
+        frame = get_latest_parking_frame()
+        if frame is not None:
+            # Yield frame in MJPEG format
+            # --frame: boundary marker
+            # Content-Type: declares this chunk is a JPEG image
+            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        time.sleep(0.05)  # ~20 FPS to avoid overwhelming the connection
+
+
+@app.get("/parking/stream")
+def parking_stream():
+    """
+    Endpoint to stream live parking lot video with annotations.
+
+    Returns:
+        StreamingResponse with multipart/x-mixed-replace MJPEG stream
+
+    Frontend usage:
+        <img src="http://localhost:8000/parking/stream" />
+
+    The stream shows:
+    - Green rectangles around empty spots
+    - Red rectangles around occupied spots
+    - Text overlay with total/available/occupied counts
+    """
+    return StreamingResponse(
+        parking_mjpeg_generator(),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+
+@app.get("/parking/stats")
+def parking_stats_endpoint():
+    """
+    Get current parking lot statistics.
+
+    Returns:
+        JSON object with:
+        - total_spots: Total number of parking spots
+        - available_spots: Number of empty spots
+        - occupied_spots: Number of occupied spots
+
+    Example response:
+        {
+            "total_spots": 50,
+            "available_spots": 12,
+            "occupied_spots": 38
+        }
+    """
+    return get_parking_stats()
+
 
 @app.get("/points")
 def get_points():

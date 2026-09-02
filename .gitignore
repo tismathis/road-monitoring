@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+backend/venv/
+frontend/node_modules/
+inspo/
+parking_slot_test/clf-data/
+parking_slot_test/clf-data.zip
+parking_slot_test/.idea/
+parking_slot_test/__pycache__/
+get-pip.py
+project_screenshots/
+
+# Model files (large binary files)
+*.p
+*.pkl
+*.h5
+*.pth
+
+# Logs
+*.log

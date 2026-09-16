@@ -3,14 +3,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { tokens } from '../../styles/tokens';
 
 /**
- * BarChartCard component - Recharts bar chart wrapped in a card
- * Apple-style dark mode with frosted glass tooltip
+ * BarChartCard component - Bar chart for operational monitoring
+ * Light theme with Infosys Blue default color
+ * Compact padding for information density
  * @param {Object} props
  * @param {Array} props.data - Chart data array
  * @param {string} props.dataKey - Key for bar values
  * @param {string} props.xKey - Key for X-axis values
  * @param {string} props.title - Chart title
- * @param {string} props.color - Bar color (default: primary green from tokens)
+ * @param {string} props.color - Bar color (default: Infosys Blue)
  * @param {number} props.height - Chart height in pixels (default: 300)
  */
 export function BarChartCard({
@@ -18,46 +19,73 @@ export function BarChartCard({
   dataKey,
   xKey,
   title,
-  color = tokens.colors.chart.primary,
+  color = tokens.colors.chart.primary, // #007CC3 - Infosys Blue
   height = 300
 }) {
   const titleStyles = {
+    fontFamily: tokens.typography.fontFamily.heading,
     fontSize: tokens.typography.fontSize.lg,
     fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.lg,
+    marginBottom: tokens.spacing.md, // Compact spacing
   };
 
   return (
-    <Card>
+    <Card padding="lg">
       {title && <div style={titleStyles}>{title}</div>}
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+        <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          {/* Light theme grid */}
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={tokens.colors.neutral.border} // #E5E7EB
+            opacity={0.5}
+          />
+
+          {/* X-axis */}
           <XAxis
             dataKey={xKey}
             tick={{ fill: tokens.colors.text.secondary, fontSize: 12 }}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke={tokens.colors.neutral.border}
+            tickLine={{ stroke: tokens.colors.neutral.border }}
           />
+
+          {/* Y-axis with tabular numbers */}
           <YAxis
             tick={{ fill: tokens.colors.text.secondary, fontSize: 12 }}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke={tokens.colors.neutral.border}
+            tickLine={{ stroke: tokens.colors.neutral.border }}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
           />
+
+          {/* Light theme tooltip */}
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(26, 26, 31, 0.95)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: `1px solid ${tokens.colors.border.default}`,
-              borderRadius: tokens.borderRadius.md,
-              boxShadow: tokens.shadows.xl,
+              backgroundColor: tokens.colors.background.elevated, // White
+              border: `1px solid ${tokens.colors.neutral.border}`,
+              borderRadius: tokens.borderRadius.sm,
+              boxShadow: tokens.shadows.lg,
               color: tokens.colors.text.primary,
+              fontSize: tokens.typography.fontSize.sm,
             }}
-            labelStyle={{ color: tokens.colors.text.primary }}
-            itemStyle={{ color: tokens.colors.text.secondary }}
-            cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+            labelStyle={{
+              color: tokens.colors.text.primary,
+              fontWeight: tokens.typography.fontWeight.medium,
+              marginBottom: tokens.spacing.xs,
+            }}
+            itemStyle={{
+              color: tokens.colors.text.secondary,
+              fontSize: tokens.typography.fontSize.sm,
+            }}
+            cursor={{ fill: tokens.colors.background.grouped, opacity: 0.5 }} // #F0F8FC
           />
-          <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
+
+          {/* Bars with subtle rounded tops */}
+          <Bar
+            dataKey={dataKey}
+            fill={color}
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </Card>

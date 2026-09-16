@@ -25,8 +25,8 @@ export function AppLayout({ children }) {
   const pageContentStyles = {
     flex: 1,
     overflow: 'auto',
-    backgroundColor: tokens.colors.background.primary,
-    padding: tokens.spacing['2xl'],
+    backgroundColor: tokens.colors.background.base, // #FAFAF9 - light warm gray
+    padding: tokens.spacing.xl, // 24px for operational density
   };
 
   return (

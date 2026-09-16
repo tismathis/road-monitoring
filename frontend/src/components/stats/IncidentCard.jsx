@@ -56,7 +56,7 @@ export function IncidentCard({ incident }) {
 
   const urgencyBarBackgroundStyles = {
     height: '8px',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: tokens.colors.background.grouped, // #F0F8FC - light blue tint
     borderRadius: tokens.borderRadius.full,
     overflow: 'hidden',
   };
@@ -81,7 +81,7 @@ export function IncidentCard({ incident }) {
     display: 'flex',
     justifyContent: 'space-between',
     padding: `${tokens.spacing.sm} 0`,
-    borderBottom: `1px solid ${tokens.colors.border.default}`,
+    borderBottom: `1px solid ${tokens.colors.neutral.border}`, // #E5E7EB
   };
 
   const detailLabelStyles = {

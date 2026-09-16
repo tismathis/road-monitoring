@@ -1,0 +1,22 @@
+# Core Web Framework
+fastapi
+uvicorn[standard]
+
+# Database
+psycopg2-binary
+
+# Authentication & Security
+python-jose[cryptography]
+passlib==1.7.4
+bcrypt==4.0.1
+
+# YOLO & Computer Vision (existing dependencies)
+ultralytics
+opencv-python
+yt-dlp
+streamlink
+sahi
+
+# Data Validation
+pydantic
+email-validator

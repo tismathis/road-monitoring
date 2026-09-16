@@ -19,7 +19,7 @@ export function MapLegend() {
     borderRadius: tokens.borderRadius.lg,
     boxShadow: tokens.shadows.xl,
     fontSize: tokens.typography.fontSize.sm,
-    border: `1px solid ${tokens.colors.border.default}`,
+    border: `1px solid ${tokens.colors.neutral.border}`,
     minWidth: '180px',
   };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch and poll camera history data
@@ -10,11 +11,13 @@ export function useCameraHistory(pollInterval = 3000) {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const fetchHistory = () => {
-      fetch(endpoints.cameraHistory)
-        .then(res => res.json())
-        .then(setHistory)
-        .catch(err => console.error('Error fetching camera history:', err));
+    const fetchHistory = async () => {
+      try {
+        const data = await authGet(endpoints.cameraHistory);
+        setHistory(data);
+      } catch (err) {
+        console.error('Error fetching camera history:', err);
+      }
     };
 
     // Initial fetch

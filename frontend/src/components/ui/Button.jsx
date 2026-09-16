@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { tokens } from '../../styles/tokens';
 
 /**
- * Button component with Apple-style micro-interactions
- * Dark mode optimized with scale and glow effects
+ * Button component - Clean light theme design
+ * Infosys Blue primary actions, subtle hover (NO scale, NO glow)
  * @param {Object} props
  * @param {'primary'|'secondary'|'ghost'|'danger'} props.variant - Button variant (default: 'primary')
  * @param {'sm'|'md'|'lg'} props.size - Button size (default: 'md')
@@ -25,32 +25,21 @@ export function Button({
 }) {
   const variantStyles = {
     primary: {
-      backgroundColor: tokens.colors.primary[500],
-      color: '#ffffff',
-      border: `1px solid ${tokens.colors.primary[500]}`,
+      backgroundColor: tokens.colors.infosys.primary, // #007CC3
+      color: '#FFFFFF',
+      border: 'none',
     },
     primaryHover: {
-      backgroundColor: tokens.colors.primary[400],
-      transform: 'scale(1.02)',
-      boxShadow: tokens.shadows.glow,
-    },
-    primaryActive: {
-      transform: 'scale(0.98)',
+      backgroundColor: tokens.colors.infosys.dark, // #005A8F - slightly darker
     },
     secondary: {
-      backgroundColor: 'rgba(31, 31, 36, 0.8)',
+      backgroundColor: tokens.colors.background.elevated, // White
       color: tokens.colors.text.primary,
-      border: `1px solid ${tokens.colors.border.default}`,
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
+      border: tokens.borders.default,
     },
     secondaryHover: {
-      backgroundColor: 'rgba(31, 31, 36, 0.9)',
-      borderColor: tokens.colors.border.hover,
-      transform: 'scale(1.02)',
-    },
-    secondaryActive: {
-      transform: 'scale(0.98)',
+      backgroundColor: tokens.colors.background.hover, // #E5F3F9
+      borderColor: tokens.colors.infosys.primary,
     },
     ghost: {
       backgroundColor: 'transparent',
@@ -58,24 +47,15 @@ export function Button({
       border: 'none',
     },
     ghostHover: {
-      backgroundColor: tokens.colors.glass.light,
-      transform: 'scale(1.02)',
-    },
-    ghostActive: {
-      transform: 'scale(0.98)',
+      backgroundColor: tokens.colors.background.grouped, // #F0F8FC
     },
     danger: {
-      backgroundColor: tokens.colors.severity.fatal,
-      color: '#ffffff',
-      border: `1px solid ${tokens.colors.severity.fatal}`,
+      backgroundColor: tokens.colors.alert.critical, // #DC2626
+      color: '#FFFFFF',
+      border: 'none',
     },
     dangerHover: {
-      backgroundColor: '#dc2626',
-      transform: 'scale(1.02)',
-      boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
-    },
-    dangerActive: {
-      transform: 'scale(0.98)',
+      backgroundColor: '#B91C1C', // Slightly darker red
     },
   };
 
@@ -93,7 +73,7 @@ export function Button({
     lg: {
       fontSize: tokens.typography.fontSize.lg,
       padding: `${tokens.spacing.lg} ${tokens.spacing.xl}`,
-      borderRadius: tokens.borderRadius.lg,
+      borderRadius: tokens.borderRadius.md,
     },
   };
 
@@ -104,31 +84,24 @@ export function Button({
     gap: tokens.spacing.sm,
     fontWeight: tokens.typography.fontWeight.medium,
     cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: `all ${tokens.transitions.normal}`,
-    opacity: disabled ? 0.6 : 1,
+    transition: `background-color ${tokens.transitions.fast}, border-color ${tokens.transitions.fast}`,
+    opacity: disabled ? 0.5 : 1,
     width: fullWidth ? '100%' : 'auto',
     ...variantStyles[variant],
     ...sizeStyles[size],
   };
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isActive, setIsActive] = useState(false);
 
   const hoverStyles = !disabled && isHovered ? variantStyles[`${variant}Hover`] : {};
-  const activeStyles = !disabled && isActive ? variantStyles[`${variant}Active`] : {};
 
   return (
     <button
-      style={{ ...baseStyles, ...hoverStyles, ...activeStyles }}
+      style={{ ...baseStyles, ...hoverStyles }}
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsActive(false);
-      }}
-      onMouseDown={() => setIsActive(true)}
-      onMouseUp={() => setIsActive(false)}
+      onMouseLeave={() => setIsHovered(false)}
       {...props}
     >
       {Icon && <Icon size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />}

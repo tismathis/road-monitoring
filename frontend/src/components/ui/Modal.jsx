@@ -38,7 +38,7 @@ export function Modal({ isOpen, onClose, children, title, width = '90vw', maxWid
     backdropFilter: 'blur(40px)',
     WebkitBackdropFilter: 'blur(40px)',
     borderRadius: tokens.borderRadius.xl,
-    border: `1px solid ${tokens.colors.border.default}`,
+    border: `1px solid ${tokens.colors.neutral.border}`,
     boxShadow: tokens.shadows.xl,
     width,
     maxWidth,
@@ -50,7 +50,7 @@ export function Modal({ isOpen, onClose, children, title, width = '90vw', maxWid
 
   const headerStyles = {
     padding: tokens.spacing.xl,
-    borderBottom: `1px solid ${tokens.colors.border.default}`,
+    borderBottom: `1px solid ${tokens.colors.neutral.border}`,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -105,7 +105,7 @@ export function Modal({ isOpen, onClose, children, title, width = '90vw', maxWid
 
       <style>{`
         .modal-close-btn:hover {
-          background-color: ${tokens.colors.glass.light};
+          background-color: ${tokens.colors.background.grouped};
           color: ${tokens.colors.text.primary};
         }
 

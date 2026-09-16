@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch road network and point data
@@ -13,8 +14,8 @@ export function useRoadData() {
 
   useEffect(() => {
     Promise.all([
-      fetch(endpoints.roads).then(res => res.json()),
-      fetch(endpoints.points).then(res => res.json())
+      authGet(endpoints.roads),
+      authGet(endpoints.points)
     ])
       .then(([roadsData, pointsData]) => {
         setRoads(roadsData);

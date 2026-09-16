@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch crash statistics data
@@ -12,8 +13,8 @@ export function useStatsData() {
 
   useEffect(() => {
     Promise.all([
-      fetch(endpoints.crashesByYear).then(res => res.json()),
-      fetch(endpoints.crashesBySeverity).then(res => res.json())
+      authGet(endpoints.crashesByYear),
+      authGet(endpoints.crashesBySeverity)
     ])
       .then(([yearData, severityData]) => {
         setByYear(yearData);

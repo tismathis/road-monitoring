@@ -3,13 +3,13 @@ import { tokens } from '../styles/tokens';
 import { useTranslation } from '../i18n/LanguageContext';
 
 /**
- * TopBar component with zone info, status, timestamp, and user profile
- * Apple-style dark mode with frosted glass effect
+ * TopBar component - Clean light theme header
+ * Shows zone info, status, timestamp, language, and user
  * @param {Object} props
  * @param {string} props.zoneName - Monitored zone name (default: "Gaborone CBD")
  * @param {boolean} props.isOnline - Online status (default: true)
  * @param {string} props.lastUpdate - Last update timestamp
- * @param {string} props.userName - User name (default: "Admin")
+ * @param {string} props.userName - User name
  */
 export function TopBar({
   zoneName = "Gaborone CBD",
@@ -18,16 +18,15 @@ export function TopBar({
   userName
 }) {
   const { language, locale, setLanguage, t } = useTranslation();
+
   const topBarStyles = {
     height: tokens.layout.topBarHeight,
-    background: 'rgba(26, 26, 31, 0.8)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderBottom: `1px solid ${tokens.colors.border.default}`,
+    background: tokens.colors.background.elevated, // White
+    borderBottom: `1px solid ${tokens.colors.neutral.border}`, // #E5E7EB
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: `0 ${tokens.spacing['2xl']}`,
+    padding: `0 ${tokens.spacing.xl}`,
     boxShadow: tokens.shadows.sm,
   };
 
@@ -38,16 +37,16 @@ export function TopBar({
   };
 
   const zoneTitleStyles = {
-    fontSize: tokens.typography.fontSize['2xl'],
+    fontFamily: tokens.typography.fontFamily.heading, // Inter
+    fontSize: tokens.typography.fontSize.xl,
     fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
     margin: 0,
-    letterSpacing: '-0.02em',
   };
 
   const subLabelStyles = {
     fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
+    color: tokens.colors.text.secondary, // Asphalt gray
   };
 
   const centerSectionStyles = {
@@ -56,62 +55,56 @@ export function TopBar({
     gap: tokens.spacing.xl,
   };
 
+  // Status badge using road stripe design (from design plan)
   const statusBadgeStyles = {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacing.sm,
-    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
-    backgroundColor: isOnline
-      ? 'rgba(16, 185, 129, 0.15)'
-      : 'rgba(107, 114, 128, 0.15)',
-    borderRadius: tokens.borderRadius.full,
+    padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+    backgroundColor: isOnline ? '#D1FAE5' : '#F3F4F6', // Light green or gray
+    borderRadius: tokens.borderRadius.sm,
     fontSize: tokens.typography.fontSize.sm,
     fontWeight: tokens.typography.fontWeight.medium,
     color: isOnline
       ? tokens.colors.status.online
       : tokens.colors.status.offline,
-    border: `1px solid ${isOnline
-      ? 'rgba(16, 185, 129, 0.3)'
-      : 'rgba(107, 114, 128, 0.3)'}`,
-    boxShadow: isOnline
-      ? '0 0 15px rgba(16, 185, 129, 0.2)'
-      : 'none',
+    border: `1px solid ${isOnline ? tokens.colors.status.online : tokens.colors.status.offline}`,
   };
 
-  const pulseStyles = {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor: isOnline ? tokens.colors.status.online : tokens.colors.status.offline,
-    animation: isOnline ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+  // Road stripe status indicator (design plan: horizontal bar = online, dashed = offline)
+  const statusIndicatorStyles = {
+    width: '20px',
+    height: '2px',
+    backgroundColor: isOnline ? tokens.colors.status.online : 'transparent',
+    borderTop: isOnline ? 'none' : `2px dashed ${tokens.colors.status.offline}`,
   };
 
   const timestampStyles = {
     fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
+    color: tokens.colors.text.tertiary,
+    fontVariantNumeric: 'tabular-nums', // Align numbers
   };
 
   const userSectionStyles = {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacing.md,
-    padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
+    padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
     borderRadius: tokens.borderRadius.md,
     cursor: 'pointer',
-    transition: `all ${tokens.transitions.normal}`,
-    border: '1px solid transparent',
+    transition: `background-color ${tokens.transitions.fast}`,
   };
 
   const userAvatarStyles = {
-    width: '36px',
-    height: '36px',
+    width: '32px',
+    height: '32px',
     borderRadius: '50%',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: tokens.colors.infosys.tint, // #F0F8FC
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: tokens.colors.primary[500],
-    border: '1px solid rgba(16, 185, 129, 0.3)',
+    color: tokens.colors.infosys.primary, // #007CC3
+    border: `1px solid ${tokens.colors.infosys.primary}`,
   };
 
   const userNameStyles = {
@@ -128,14 +121,16 @@ export function TopBar({
 
   return (
     <header style={topBarStyles}>
+      {/* Left: Zone info */}
       <div style={leftSectionStyles}>
         <h1 style={zoneTitleStyles}>{zoneName}</h1>
         <div style={subLabelStyles}>{t('top.subtitle')}</div>
       </div>
 
+      {/* Center: Status and timestamp */}
       <div style={centerSectionStyles}>
         <div style={statusBadgeStyles}>
-          <div style={pulseStyles} />
+          <div style={statusIndicatorStyles} />
           <span>{isOnline ? t('top.online') : t('top.offline')}</span>
         </div>
         <div style={timestampStyles}>
@@ -143,33 +138,47 @@ export function TopBar({
         </div>
       </div>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing.sm, color: tokens.colors.text.secondary, fontSize: tokens.typography.fontSize.sm }}>
-        <Languages size={18} aria-hidden="true" />
+      {/* Language selector */}
+      <label style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.spacing.sm,
+        color: tokens.colors.text.secondary,
+        fontSize: tokens.typography.fontSize.sm
+      }}>
+        <Languages size={16} aria-hidden="true" />
         <span>{t('language.label')}</span>
         <select
           value={language}
           onChange={(event) => setLanguage(event.target.value)}
           aria-label={t('language.label')}
-          style={{ background: 'rgba(31, 31, 36, 0.9)', color: tokens.colors.text.primary, border: `1px solid ${tokens.colors.border.default}`, borderRadius: tokens.borderRadius.md, padding: `${tokens.spacing.sm} ${tokens.spacing.md}`, cursor: 'pointer' }}
+          style={{
+            background: tokens.colors.background.elevated,
+            color: tokens.colors.text.primary,
+            border: `1px solid ${tokens.colors.neutral.border}`,
+            borderRadius: tokens.borderRadius.sm,
+            padding: `${tokens.spacing.xs} ${tokens.spacing.sm}`,
+            fontSize: tokens.typography.fontSize.sm,
+            cursor: 'pointer',
+          }}
         >
           <option value="en">{t('language.english')}</option>
           <option value="fr">{t('language.french')}</option>
         </select>
       </label>
 
+      {/* Right: User info */}
       <div style={userSectionStyles} className="user-section">
         <div style={userAvatarStyles}>
-          <User size={20} />
+          <User size={18} />
         </div>
         <div style={userNameStyles}>{userName || t('user.admin')}</div>
       </div>
 
+      {/* Subtle hover effect - NO transform */}
       <style>{`
         .user-section:hover {
-          background-color: ${tokens.colors.glass.light};
-          transform: translateY(-1px);
-          border-color: ${tokens.colors.border.default};
-          transition: all ${tokens.transitions.normal};
+          background-color: ${tokens.colors.background.grouped};
         }
       `}</style>
     </header>

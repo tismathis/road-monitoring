@@ -1,85 +1,76 @@
 import { tokens } from '../../styles/tokens';
 
 /**
- * Badge component for status and severity indicators
- * Apple-style dark mode with subtle borders and glow
+ * Badge component - Status and severity indicators
+ * Light theme with functional color coding (road safety conventions)
+ * NO ALL-CAPS labels unless appropriate for the content
  * @param {Object} props
- * @param {'fatal'|'serious'|'minor'|'info'|'online'|'offline'|'dispatched'|'notified'|'inProgress'|'warning'|'error'} props.variant - Badge variant
+ * @param {'fatal'|'serious'|'minor'|'info'|'online'|'offline'|'warning'|'error'|'available'} props.variant - Badge variant
  * @param {React.ReactNode} props.children - Badge text
  * @param {'sm'|'md'|'lg'} props.size - Badge size (default: 'md')
  */
 export function Badge({ variant = 'info', children, size = 'md' }) {
   const variantColors = {
-    // Severity variants (brighter for dark mode)
+    // Severity variants
     fatal: {
-      bg: `${tokens.colors.severity.fatal}30`,
-      text: tokens.colors.severity.fatal,
-      border: `${tokens.colors.severity.fatal}60`,
+      bg: '#FEE2E2', // Light red background
+      text: tokens.colors.alert.critical,
+      border: tokens.colors.alert.critical,
     },
     serious: {
-      bg: `${tokens.colors.severity.serious}30`,
-      text: tokens.colors.severity.serious,
-      border: `${tokens.colors.severity.serious}60`,
+      bg: '#FEF3C7', // Light yellow/amber background
+      text: tokens.colors.alert.moderateOrange,
+      border: tokens.colors.alert.moderateOrange,
     },
     minor: {
-      bg: `${tokens.colors.severity.minor}30`,
-      text: tokens.colors.severity.minor,
-      border: `${tokens.colors.severity.minor}60`,
+      bg: '#FEF9C3', // Very light yellow
+      text: '#CA8A04',
+      border: '#CA8A04',
     },
     info: {
-      bg: `${tokens.colors.severity.info}30`,
-      text: tokens.colors.severity.info,
-      border: `${tokens.colors.severity.info}60`,
+      bg: tokens.colors.infosys.tint, // #F0F8FC - Infosys Blue tint
+      text: tokens.colors.infosys.dark, // #005A8F
+      border: tokens.colors.infosys.primary,
     },
 
-    // Status variants
+    // Status variants (road-inspired colors)
     online: {
-      bg: `${tokens.colors.status.online}30`,
+      bg: '#D1FAE5', // Light green
       text: tokens.colors.status.online,
-      border: `${tokens.colors.status.online}60`,
+      border: tokens.colors.status.online,
+    },
+    available: {
+      bg: '#D1FAE5', // Light green
+      text: tokens.colors.status.available,
+      border: tokens.colors.status.available,
     },
     offline: {
-      bg: `${tokens.colors.status.offline}30`,
+      bg: '#F3F4F6', // Light gray
       text: tokens.colors.status.offline,
-      border: `${tokens.colors.status.offline}60`,
-    },
-    dispatched: {
-      bg: `${tokens.colors.status.dispatched}30`,
-      text: tokens.colors.status.dispatched,
-      border: `${tokens.colors.status.dispatched}60`,
-    },
-    notified: {
-      bg: `${tokens.colors.status.notified}30`,
-      text: tokens.colors.status.notified,
-      border: `${tokens.colors.status.notified}60`,
-    },
-    inProgress: {
-      bg: `${tokens.colors.status.inProgress}30`,
-      text: tokens.colors.status.inProgress,
-      border: `${tokens.colors.status.inProgress}60`,
+      border: tokens.colors.status.offline,
     },
     warning: {
-      bg: `${tokens.colors.status.warning}30`,
-      text: tokens.colors.status.warning,
-      border: `${tokens.colors.status.warning}60`,
+      bg: '#FEF3C7', // Light amber
+      text: tokens.colors.alert.amber,
+      border: tokens.colors.alert.amber,
     },
     error: {
-      bg: `${tokens.colors.status.error}30`,
-      text: tokens.colors.status.error,
-      border: `${tokens.colors.status.error}60`,
+      bg: '#FEE2E2', // Light red
+      text: tokens.colors.alert.critical,
+      border: tokens.colors.alert.critical,
     },
   };
 
   const sizeStyles = {
     sm: {
       fontSize: tokens.typography.fontSize.xs,
-      padding: `2px ${tokens.spacing.sm}`,
+      padding: `${tokens.spacing.xs} ${tokens.spacing.sm}`,
       borderRadius: tokens.borderRadius.sm,
     },
     md: {
       fontSize: tokens.typography.fontSize.sm,
-      padding: `4px ${tokens.spacing.md}`,
-      borderRadius: tokens.borderRadius.md,
+      padding: `${tokens.spacing.xs} ${tokens.spacing.md}`,
+      borderRadius: tokens.borderRadius.sm,
     },
     lg: {
       fontSize: tokens.typography.fontSize.base,
@@ -98,8 +89,6 @@ export function Badge({ variant = 'info', children, size = 'md' }) {
     color: colors.text,
     border: `1px solid ${colors.border}`,
     fontWeight: tokens.typography.fontWeight.medium,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
     ...sizeStyles[size],
   };
 

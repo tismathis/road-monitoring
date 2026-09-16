@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { CameraMarker } from './CameraMarker';
 import { ParkingMarker } from './ParkingMarker';
 import { MapLegend } from './MapLegend';
+import { useCameraList } from '../../hooks/useGenericCameraData';
 import { tokens } from '../../styles/tokens';
 import { DEFAULT_MAP_STYLE } from '../../utils/mapStyles';
 import { useTranslation } from '../../i18n/LanguageContext';
@@ -26,12 +27,18 @@ export function MapView({
   roads,
   points,
   crashes,
-  cameraPosition = [-24.6539, 25.9010],
-  parkingPosition,      // NEW: Optional parking lot location
-  onParkingClick,       // NEW: Optional callback for parking marker click
+  cameraPosition = [-24.6539, 25.9010],  // DEPRECATED: Use cameras list instead
+  parkingPosition,                        // DEPRECATED: Use cameras list instead
+  onParkingClick,                         // DEPRECATED: Direct navigation now
   showLegend = true
 }) {
   const { t } = useTranslation();
+
+  // PART 2: Fetch dynamic camera list from backend
+  const cameras = useCameraList(10000); // Poll every 10 seconds
+
+  // Debug: Log camera data
+  console.log('[MapView] Cameras from backend:', cameras);
   // Crash point styling - IMPROVED with glow effect
   const crashPointStyle = (feature) => {
     const severity = feature.properties.severity;
@@ -48,19 +55,19 @@ export function MapView({
     };
   };
 
-  // Road styling - Plus moderne
+  // Road styling - Infosys Blue
   const roadStyle = {
-    color: tokens.colors.primary[500],
+    color: tokens.colors.infosys.primary, // #007CC3
     weight: 4,
     opacity: 0.7,
     lineCap: 'round',
     lineJoin: 'round'
   };
 
-  // Point styling (signals/crossings) - Plus visible
+  // Point styling (signals/crossings)
   const pointStyle = {
     radius: 5,
-    fillColor: tokens.colors.primary[500],
+    fillColor: tokens.colors.infosys.primary, // #007CC3
     color: '#ffffff',
     weight: 2,
     fillOpacity: 0.8,
@@ -120,15 +127,36 @@ export function MapView({
           />
         )}
 
-        {/* Live camera marker */}
-        <CameraMarker position={cameraPosition} />
-
-        {/* Parking lot marker - only rendered if parkingPosition is provided */}
-        {parkingPosition && (
-          <ParkingMarker
-            position={parkingPosition}
-            onClick={onParkingClick}
-          />
+        {/* Camera markers - PART 2: Deep-link navigation with fallback */}
+        {cameras.length > 0 ? (
+          // Dynamic markers from backend camera registry
+          cameras.map((camera) => (
+            <CameraMarker
+              key={camera.id}
+              position={camera.position}
+              cameraId={camera.id}
+              cameraName={camera.name}
+              cameraType={camera.type}
+            />
+          ))
+        ) : (
+          // Fallback to hardcoded positions if cameras list is empty/loading
+          <>
+            <CameraMarker
+              position={cameraPosition}
+              cameraId="traffic_main_gaborone"
+              cameraName="Traffic Camera"
+              cameraType="traffic"
+            />
+            {parkingPosition && (
+              <CameraMarker
+                position={parkingPosition}
+                cameraId="parking_gaborone_lot1"
+                cameraName="Parking Lot"
+                cameraType="parking"
+              />
+            )}
+          </>
         )}
 
         {/* Zoom controls repositionnés en bas à droite */}
@@ -182,20 +210,20 @@ export function MapView({
         }
 
         .leaflet-popup-content b {
-          color: ${tokens.colors.primary[700]};
+          color: ${tokens.colors.infosys.dark}; // #005A8F
           font-weight: ${tokens.typography.fontWeight.semibold};
         }
 
-        /* Style des contrôles de zoom */
+        /* Style des contrôles de zoom - Light theme */
         .leaflet-control-zoom {
           border: none !important;
           box-shadow: ${tokens.shadows.md};
         }
 
         .leaflet-control-zoom a {
-          background-color: ${tokens.colors.neutral[0]} !important;
-          color: ${tokens.colors.neutral[700]} !important;
-          border: 1px solid ${tokens.colors.neutral[200]} !important;
+          background-color: ${tokens.colors.background.elevated} !important; // White
+          color: ${tokens.colors.text.primary} !important; // #1A1A1A
+          border: 1px solid ${tokens.colors.neutral.border} !important; // #E5E7EB
           border-radius: ${tokens.borderRadius.sm} !important;
           width: 36px !important;
           height: 36px !important;
@@ -205,9 +233,9 @@ export function MapView({
         }
 
         .leaflet-control-zoom a:hover {
-          background-color: ${tokens.colors.primary[50]} !important;
-          color: ${tokens.colors.primary[700]} !important;
-          border-color: ${tokens.colors.primary[500]} !important;
+          background-color: ${tokens.colors.background.hover} !important; // #E5F3F9
+          color: ${tokens.colors.infosys.primary} !important; // #007CC3
+          border-color: ${tokens.colors.infosys.primary} !important; // #007CC3
         }
 
         .leaflet-control-zoom a:first-child {

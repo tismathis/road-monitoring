@@ -47,7 +47,7 @@ export function StatisticsPage() {
   const headingStyles = {
     fontSize: tokens.typography.fontSize['3xl'],
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.xl,
   };
 

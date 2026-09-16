@@ -38,7 +38,7 @@ export function MapControlCard({
   const selectStyles = {
     width: '100%',
     padding: tokens.spacing.sm,
-    border: `1px solid ${tokens.colors.border.default}`,
+    border: `1px solid ${tokens.colors.neutral.border}`,
     borderRadius: tokens.borderRadius.md,
     fontSize: tokens.typography.fontSize.sm,
     fontFamily: tokens.typography.fontFamily.sans,
@@ -75,7 +75,7 @@ export function MapControlCard({
 
           <style>{`
             .map-control-select:hover {
-              border-color: ${tokens.colors.border.hover};
+              border-color: ${tokens.colors.infosys.primary};
             }
 
             .map-control-select option {

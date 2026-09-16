@@ -16,7 +16,14 @@ heatmap_lock = threading.Lock()
 # ---- CONFIG: put your live camera link here ----
 CAMERA_URL = "https://www.youtube.com/watch?v=gTO_FJzv70k"
 
-model = YOLO("yolov8m.pt")
+# ---- Detection tuning ----
+# Source stream is native 1920x1080, so imgsz=1920 lets YOLO analyze at
+# full native resolution — no real detail gained going higher than this.
+CONFIDENCE_THRESHOLD = 0.12
+DETECTION_IMGSZ = 1920
+TRACKER_CONFIG = "custom_bytetrack.yaml"
+
+model = YOLO("yolo26n.pt")
 
 CLASS_MAP = {0: "person", 1: "bicycle", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
 TRACK_CLASSES = list(CLASS_MAP.keys())
@@ -30,10 +37,19 @@ seen_track_ids = set()
 
 
 def resolve_stream_url(url):
-    """If it's a YouTube link, resolve it to a direct stream URL yt-dlp can read."""
+    """
+    If it's a YouTube link, resolve it to a direct stream URL yt-dlp can read.
+    Explicitly requests the best available quality ("-f best"), since
+    yt-dlp can otherwise hand back a lower-resolution stream variant than
+    what's actually available — and we specifically want full 1920x1080
+    detail for detecting small/distant objects.
+    """
     if "youtube.com" in url or "youtu.be" in url:
         try:
-            result = subprocess.run(["yt-dlp", "-g", url], capture_output=True, text=True, timeout=20)
+            result = subprocess.run(
+                ["yt-dlp", "-f", "best", "-g", url],
+                capture_output=True, text=True, timeout=20
+            )
             resolved = result.stdout.strip().split("\n")[0]
             return resolved if resolved else url
         except Exception as e:
@@ -61,9 +77,17 @@ def camera_worker():
             cap = cv2.VideoCapture(stream_url)
             continue
 
-        results = model.track(frame, persist=True, classes=TRACK_CLASSES, conf=0.15, imgsz=1280, verbose=False)
+        results = model.track(
+            frame,
+            persist=True,
+            classes=TRACK_CLASSES,
+            conf=CONFIDENCE_THRESHOLD,
+            imgsz=DETECTION_IMGSZ,
+            tracker=TRACKER_CONFIG,
+            verbose=False
+        )
         annotated = results[0].plot()
-        
+
         if results[0].boxes is not None and len(results[0].boxes) > 0:
             h, w = frame.shape[:2]
             xyxy = results[0].boxes.xyxy.cpu().numpy()
@@ -74,7 +98,7 @@ def camera_worker():
                     bw = (box[2] - box[0]) / w
                     bh = (box[3] - box[1]) / h
                     heatmap_points.append({"x": float(cx), "y": float(cy), "w": float(bw), "h": float(bh)})
-                    
+
         # Count each tracked object once, the first time its ID appears
         if results[0].boxes is not None and results[0].boxes.id is not None:
             ids = results[0].boxes.id.cpu().numpy()
@@ -86,7 +110,8 @@ def camera_worker():
                         seen_track_ids.add(tid)
                         name = CLASS_MAP.get(int(cls_id), "other")
                         counts[name] = counts.get(name, 0) + 1
-            # Log a snapshot every 10 seconds for the analytics chart
+
+        # Log a snapshot every 10 seconds for the analytics chart
         global last_snapshot_time
         now = time_module.time()
         if now - last_snapshot_time >= 10:
@@ -116,11 +141,11 @@ def get_latest_frame():
 def get_counts():
     with counts_lock:
         return dict(counts)
-    
+
 def get_heatmap_points():
     with heatmap_lock:
         return list(heatmap_points)
-    
+
 def get_history():
     with history_lock:
         return list(history)

@@ -1,0 +1,7 @@
+tracker_type: bytetrack
+track_high_thresh: 0.25      # default 0.5 — lower lets weaker detections still confirm a track
+track_low_thresh: 0.05       # default 0.1 — lower lets very weak detections still associate with an existing track
+new_track_thresh: 0.3        # default 0.6 — lower lets new, uncertain objects start being tracked sooner
+track_buffer: 60             # default 30 — how many frames a lost track stays "alive" before being dropped (helps with brief occlusion/low-confidence gaps typical of distant objects)
+match_thresh: 0.85           # default 0.8 — slightly higher tolerance for matching detections to existing tracks across frames
+fuse_score: True

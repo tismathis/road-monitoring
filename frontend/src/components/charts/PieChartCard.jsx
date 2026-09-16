@@ -63,7 +63,7 @@ export function PieChartCard({
               backgroundColor: 'rgba(26, 26, 31, 0.95)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              border: `1px solid ${tokens.colors.border.default}`,
+              border: `1px solid ${tokens.colors.neutral.border}`,
               borderRadius: tokens.borderRadius.md,
               boxShadow: tokens.shadows.xl,
               color: tokens.colors.text.primary,

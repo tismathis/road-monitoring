@@ -19,7 +19,7 @@ function Sparkline({ data, color, height = 40, width = 100 }) {
   }).join(' ');
 
   return (
-    <svg width={width} height={height} style={{ position: 'absolute', bottom: 8, right: 8, opacity: 0.4 }}>
+    <svg width={width} height={height} style={{ position: 'absolute', bottom: 8, right: 8, opacity: 0.3 }}>
       <polyline
         points={points}
         fill="none"
@@ -33,22 +33,24 @@ function Sparkline({ data, color, height = 40, width = 100 }) {
 }
 
 /**
- * StatCard component - displays a large metric with trend and sparkline
- * Apple-style dark mode with frosted glass
+ * StatCard component - Displays key metrics
+ * Light theme, operational density
+ * NO ALL-CAPS labels (from avoid list)
  * @param {Object} props
  * @param {number|string} props.value - Main value to display
- * @param {string} props.label - Label for the metric
- * @param {Object} props.trend - Trend object { direction: 'up'|'down'|'neutral', percentage: number }
- * @param {Array<number>} props.sparklineData - Array of values for sparkline chart
- * @param {React.Component} props.icon - Optional lucide-react icon component
- * @param {string} props.suffix - Optional suffix (e.g., 'km/h')
+ * @param {string} props.label - Label for the metric (NOT forced uppercase)
+ * @param {Object} props.trend - Optional trend { direction: 'up'|'down'|'neutral', percentage: number }
+ * @param {Array<number>} props.sparklineData - Optional sparkline data
+ * @param {React.Component} props.icon - Optional lucide-react icon
+ * @param {string} props.suffix - Optional suffix (e.g., 'km/h', '%')
  */
 export function StatCard({ value, label, trend, sparklineData, icon: Icon, suffix }) {
   const { locale } = useTranslation();
+
   const getTrendColor = () => {
     if (!trend) return tokens.colors.text.tertiary;
-    if (trend.direction === 'up') return tokens.colors.primary[500];
-    if (trend.direction === 'down') return tokens.colors.severity.fatal;
+    if (trend.direction === 'up') return tokens.colors.infosys.primary; // #007CC3
+    if (trend.direction === 'down') return tokens.colors.alert.critical; // #DC2626
     return tokens.colors.text.tertiary;
   };
 
@@ -61,20 +63,19 @@ export function StatCard({ value, label, trend, sparklineData, icon: Icon, suffi
 
   const containerStyles = {
     position: 'relative',
-    minHeight: '160px',
+    minHeight: '120px', // Reduced from 160px for density
     overflow: 'hidden',
   };
 
   const iconStyles = {
-    color: tokens.colors.text.tertiary,
-    marginBottom: tokens.spacing.sm,
+    color: tokens.colors.infosys.primary,
+    marginBottom: tokens.spacing.xs,
   };
 
   const labelStyles = {
     fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    color: tokens.colors.text.secondary, // Asphalt gray
+    // NO textTransform: 'uppercase' - avoid generic ALL-CAPS labels
     fontWeight: tokens.typography.fontWeight.medium,
     marginBottom: tokens.spacing.sm,
   };
@@ -83,18 +84,20 @@ export function StatCard({ value, label, trend, sparklineData, icon: Icon, suffi
     display: 'flex',
     alignItems: 'baseline',
     gap: tokens.spacing.sm,
-    marginBottom: tokens.spacing.md,
+    marginBottom: tokens.spacing.sm,
   };
 
   const valueStyles = {
-    fontSize: tokens.typography.fontSize['4xl'],
-    fontWeight: tokens.typography.fontWeight.bold,
+    fontFamily: tokens.typography.fontFamily.heading, // Inter for numbers
+    fontSize: tokens.typography.fontSize['3xl'], // Reduced from 4xl
+    fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
     lineHeight: 1,
+    fontVariantNumeric: 'tabular-nums', // Align numbers
   };
 
   const suffixStyles = {
-    fontSize: tokens.typography.fontSize.lg,
+    fontSize: tokens.typography.fontSize.base,
     color: tokens.colors.text.secondary,
     fontWeight: tokens.typography.fontWeight.normal,
   };
@@ -102,18 +105,18 @@ export function StatCard({ value, label, trend, sparklineData, icon: Icon, suffi
   const trendStyles = {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '4px',
+    gap: tokens.spacing.xs,
     fontSize: tokens.typography.fontSize.sm,
     fontWeight: tokens.typography.fontWeight.medium,
     color: getTrendColor(),
   };
 
   return (
-    <Card padding="xl" hover={true}>
+    <Card padding="lg" hover={false}>
       <div style={containerStyles}>
         {Icon && (
           <div style={iconStyles}>
-            <Icon size={24} />
+            <Icon size={20} />
           </div>
         )}
         <div style={labelStyles}>{label}</div>
@@ -133,8 +136,8 @@ export function StatCard({ value, label, trend, sparklineData, icon: Icon, suffi
           <Sparkline
             data={sparklineData}
             color={getTrendColor()}
-            width={120}
-            height={50}
+            width={100}
+            height={40}
           />
         )}
       </div>

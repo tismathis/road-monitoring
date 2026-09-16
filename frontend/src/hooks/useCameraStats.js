@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch and poll camera detection statistics
@@ -10,11 +11,13 @@ export function useCameraStats(pollInterval = 3000) {
   const [stats, setStats] = useState({});
 
   useEffect(() => {
-    const fetchStats = () => {
-      fetch(endpoints.cameraStats)
-        .then(res => res.json())
-        .then(setStats)
-        .catch(err => console.error('Error fetching camera stats:', err));
+    const fetchStats = async () => {
+      try {
+        const data = await authGet(endpoints.cameraStats);
+        setStats(data);
+      } catch (err) {
+        console.error('Error fetching camera stats:', err);
+      }
     };
 
     // Initial fetch

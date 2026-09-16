@@ -83,7 +83,7 @@ export function ParkingModal({ isOpen, onClose }) {
   // Style for the video container
   const videoContainerStyles = {
     width: '100%',
-    backgroundColor: tokens.colors.neutral[900],  // Black background
+    backgroundColor: tokens.colors.text.primary,  // Black background
     borderRadius: tokens.borderRadius.lg,
     overflow: 'hidden',
     boxShadow: tokens.shadows.lg,
@@ -206,18 +206,18 @@ export function ParkingModal({ isOpen, onClose }) {
               {/* Available Spots Card (Green) */}
               <div style={{
                 ...statCardStyles,
-                backgroundColor: tokens.colors.primary[50],  // Green background
-                border: `2px solid ${tokens.colors.primary[100]}`,
+                backgroundColor: tokens.colors.infosys.tint,  // Green background
+                border: `2px solid ${tokens.colors.infosys.light}`,
               }}>
                 <div style={{
                   ...statLabelStyles,
-                  color: tokens.colors.primary[700],  // Dark green text
+                  color: tokens.colors.infosys.dark,  // Dark green text
                 }}>
                   {t('parking.available')}
                 </div>
                 <p style={{
                   ...statValueStyles,
-                  color: tokens.colors.primary[700],
+                  color: tokens.colors.infosys.dark,
                 }}>
                   {stats.available_spots}
                 </p>
@@ -249,7 +249,7 @@ export function ParkingModal({ isOpen, onClose }) {
             <div style={descriptionStyles}>
               <strong>{t('parking.description', { percent: getOccupancyPercentage() })}</strong>
               {' • '}
-              <span style={{ color: tokens.colors.primary[600] }}>
+              <span style={{ color: tokens.colors.infosys.dark }}>
                 {t('parking.green')}
               </span>
               {t('parking.greenDetail')}

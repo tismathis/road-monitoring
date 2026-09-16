@@ -2,8 +2,8 @@ import { Card } from '../ui/Card';
 import { tokens } from '../../styles/tokens';
 
 /**
- * KeyMetricCard component - compact card with icon, label, and value
- * Apple-style dark mode with frosted glass and glow effects
+ * KeyMetricCard component - Compact metric card with icon
+ * Light theme, NO glow effects
  * @param {Object} props
  * @param {React.Component} props.icon - lucide-react icon component
  * @param {string} props.label - Metric label
@@ -12,10 +12,17 @@ import { tokens } from '../../styles/tokens';
  */
 export function KeyMetricCard({ icon: Icon, label, value, status = 'success' }) {
   const statusColors = {
-    success: tokens.colors.status.online,
-    warning: tokens.colors.status.warning,
-    error: tokens.colors.status.error,
-    neutral: tokens.colors.text.tertiary,
+    success: tokens.colors.status.online,      // #059669 - Green
+    warning: tokens.colors.alert.amber,        // #D97706 - Amber
+    error: tokens.colors.alert.critical,       // #DC2626 - Red
+    neutral: tokens.colors.infosys.primary,    // #007CC3 - Infosys Blue
+  };
+
+  const statusBackgrounds = {
+    success: '#D1FAE5',   // Light green
+    warning: '#FEF3C7',   // Light amber
+    error: '#FEE2E2',     // Light red
+    neutral: tokens.colors.infosys.tint, // #F0F8FC - Light blue
   };
 
   const containerStyles = {
@@ -28,14 +35,14 @@ export function KeyMetricCard({ icon: Icon, label, value, status = 'success' }) 
     width: '48px',
     height: '48px',
     borderRadius: tokens.borderRadius.md,
-    backgroundColor: `${statusColors[status]}20`,
+    backgroundColor: statusBackgrounds[status],
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     color: statusColors[status],
     flexShrink: 0,
-    border: `1px solid ${statusColors[status]}40`,
-    boxShadow: `0 0 20px ${statusColors[status]}30`,
+    border: `1px solid ${statusColors[status]}`,
+    // NO boxShadow glow - keep it clean
   };
 
   const contentStyles = {
@@ -45,21 +52,23 @@ export function KeyMetricCard({ icon: Icon, label, value, status = 'success' }) 
 
   const labelStyles = {
     fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
-    marginBottom: '2px',
+    color: tokens.colors.text.secondary, // Asphalt gray
+    marginBottom: tokens.spacing.xs,
   };
 
   const valueStyles = {
+    fontFamily: tokens.typography.fontFamily.heading,
     fontSize: tokens.typography.fontSize['2xl'],
-    fontWeight: tokens.typography.fontWeight.bold,
+    fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
+    fontVariantNumeric: 'tabular-nums',
   };
 
   return (
-    <Card padding="lg" hover={true}>
+    <Card padding="lg" hover={false}>
       <div style={containerStyles}>
         <div style={iconContainerStyles}>
-          {Icon && <Icon size={24} />}
+          {Icon && <Icon size={22} />}
         </div>
         <div style={contentStyles}>
           <div style={labelStyles}>{label}</div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch historical crash data
@@ -11,8 +12,7 @@ export function useCrashData() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(endpoints.historicalCrashes)
-      .then(res => res.json())
+    authGet(endpoints.historicalCrashes)
       .then(data => {
         setCrashes(data);
         setLoading(false);

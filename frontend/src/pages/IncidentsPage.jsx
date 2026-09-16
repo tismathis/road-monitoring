@@ -26,7 +26,7 @@ export function IncidentsPage() {
   const headingStyles = {
     fontSize: tokens.typography.fontSize['3xl'],
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.xl,
   };
 
@@ -35,7 +35,7 @@ export function IncidentsPage() {
     alignItems: 'center',
     gap: tokens.spacing.lg,
     padding: tokens.spacing.lg,
-    backgroundColor: tokens.colors.neutral[0],
+    backgroundColor: tokens.colors.background.elevated,
     borderRadius: tokens.borderRadius.lg,
     boxShadow: tokens.shadows.sm,
     marginBottom: tokens.spacing.xl,
@@ -47,15 +47,15 @@ export function IncidentsPage() {
     gap: tokens.spacing.sm,
     fontSize: tokens.typography.fontSize.sm,
     fontWeight: tokens.typography.fontWeight.medium,
-    color: tokens.colors.neutral[700],
+    color: tokens.colors.text.primary,
   };
 
   const filterButtonStyles = (isActive) => ({
     padding: `${tokens.spacing.sm} ${tokens.spacing.lg}`,
     borderRadius: tokens.borderRadius.md,
-    border: `1px solid ${isActive ? tokens.colors.primary[500] : tokens.colors.neutral[200]}`,
-    backgroundColor: isActive ? tokens.colors.primary[100] : tokens.colors.neutral[0],
-    color: isActive ? tokens.colors.primary[700] : tokens.colors.neutral[700],
+    border: `1px solid ${isActive ? tokens.colors.infosys.primary : tokens.colors.neutral.border}`,
+    backgroundColor: isActive ? tokens.colors.infosys.light : tokens.colors.background.elevated,
+    color: isActive ? tokens.colors.infosys.dark : tokens.colors.text.primary,
     cursor: 'pointer',
     fontSize: tokens.typography.fontSize.sm,
     fontWeight: tokens.typography.fontWeight.medium,

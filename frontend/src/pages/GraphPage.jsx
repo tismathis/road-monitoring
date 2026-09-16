@@ -69,12 +69,12 @@ export function GraphPage() {
   // Get node color - green for all, red for alerts
   const getNodeColor = (node) => {
     if (node.hasAlert) return tokens.colors.severity.fatal; // Red for alerts
-    return tokens.colors.primary[500]; // Green for all normal nodes
+    return tokens.colors.infosys.primary; // Green for all normal nodes
   };
 
   // Get link color - gray for all links
   const getLinkColor = () => {
-    return tokens.colors.neutral[700]; // Dark gray for all links
+    return tokens.colors.text.primary; // Dark gray for all links
   };
 
   // Count alerts
@@ -88,7 +88,7 @@ export function GraphPage() {
   const headingStyles = {
     fontSize: tokens.typography.fontSize['3xl'],
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.xl,
   };
 
@@ -218,7 +218,7 @@ export function GraphPage() {
             <span>{t('graph.accidentAlert')}</span>
           </div>
           <div style={legendItemStyles}>
-            <div style={colorDotStyles(tokens.colors.primary[500])} />
+            <div style={colorDotStyles(tokens.colors.infosys.primary)} />
             <span>{t('graph.normalRoad')}</span>
           </div>
         </div>
@@ -255,7 +255,7 @@ export function GraphPage() {
           </div>
           <div style={detailItemStyles}>
             <span style={{ color: tokens.colors.neutral[500] }}>{t('graph.state')}</span>
-            <span style={{ fontWeight: tokens.typography.fontWeight.medium, color: selectedNode.hasAlert ? tokens.colors.severity.fatal : tokens.colors.primary[500] }}>
+            <span style={{ fontWeight: tokens.typography.fontWeight.medium, color: selectedNode.hasAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary }}>
               {selectedNode.hasAlert ? t('graph.accidentDetected') : t('graph.normalTraffic')}
             </span>
           </div>

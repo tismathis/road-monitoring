@@ -76,7 +76,7 @@ export function GraphPage3D() {
   // Node 3D object - glowing spheres like neurons
   const createNodeObject = useCallback((node) => {
     const isAlert = node.hasAlert;
-    const color = isAlert ? tokens.colors.severity.fatal : tokens.colors.primary[500];
+    const color = isAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary;
 
     // Create a group for the node
     const group = new THREE.Group();
@@ -185,7 +185,7 @@ export function GraphPage3D() {
     borderRadius: tokens.borderRadius.md,
     fontSize: tokens.typography.fontSize.sm,
     color: tokens.colors.text.secondary,
-    border: `1px solid ${tokens.colors.border.default}`,
+    border: `1px solid ${tokens.colors.neutral.border}`,
   };
 
   const graphContainerStyles = {
@@ -194,7 +194,7 @@ export function GraphPage3D() {
     borderRadius: tokens.borderRadius.xl,
     overflow: 'hidden',
     background: '#000000',
-    border: `1px solid ${tokens.colors.border.default}`,
+    border: `1px solid ${tokens.colors.neutral.border}`,
   };
 
   return (
@@ -284,7 +284,7 @@ export function GraphPage3D() {
               const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
               const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
               const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? tokens.colors.severity.fatal : tokens.colors.primary[500];
+              return hasAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary;
             }}
             onNodeClick={handleNodeClick}
             enableNodeDrag={false}
@@ -319,8 +319,8 @@ export function GraphPage3D() {
               width: '16px',
               height: '16px',
               borderRadius: '50%',
-              backgroundColor: tokens.colors.primary[500],
-              boxShadow: `0 0 10px ${tokens.colors.primary[500]}80`
+              backgroundColor: tokens.colors.infosys.primary,
+              boxShadow: `0 0 10px ${tokens.colors.infosys.primary}80`
             }} />
             <span style={{ color: tokens.colors.text.secondary }}>{t('graph.normalRoad')}</span>
           </div>
@@ -369,7 +369,7 @@ export function GraphPage3D() {
               display: 'flex',
               justifyContent: 'space-between',
               padding: `${tokens.spacing.sm} 0`,
-              borderBottom: `1px solid ${tokens.colors.border.default}`
+              borderBottom: `1px solid ${tokens.colors.neutral.border}`
             }}>
               <span style={{ color: tokens.colors.text.secondary }}>{t('graph.roadId')}</span>
               <span style={{ color: tokens.colors.text.primary, fontWeight: tokens.typography.fontWeight.medium }}>
@@ -380,7 +380,7 @@ export function GraphPage3D() {
               display: 'flex',
               justifyContent: 'space-between',
               padding: `${tokens.spacing.sm} 0`,
-              borderBottom: `1px solid ${tokens.colors.border.default}`
+              borderBottom: `1px solid ${tokens.colors.neutral.border}`
             }}>
               <span style={{ color: tokens.colors.text.secondary }}>{t('graph.type')}</span>
               <span style={{ color: tokens.colors.text.primary, fontWeight: tokens.typography.fontWeight.medium }}>
@@ -394,7 +394,7 @@ export function GraphPage3D() {
             }}>
               <span style={{ color: tokens.colors.text.secondary }}>{t('graph.state')}</span>
               <span style={{
-                color: selectedNode.hasAlert ? tokens.colors.severity.fatal : tokens.colors.primary[500],
+                color: selectedNode.hasAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary,
                 fontWeight: tokens.typography.fontWeight.medium
               }}>
                 {selectedNode.hasAlert ? t('graph.detected') : t('graph.normalTraffic')}
@@ -405,9 +405,9 @@ export function GraphPage3D() {
       )}
 
       {/* Info Card */}
-      <Card style={{ marginTop: tokens.spacing.xl, background: 'rgba(16, 185, 129, 0.1)', border: `1px solid ${tokens.colors.primary[500]}40` }}>
+      <Card style={{ marginTop: tokens.spacing.xl, background: 'rgba(16, 185, 129, 0.1)', border: `1px solid ${tokens.colors.infosys.primary}40` }}>
         <div style={{ display: 'flex', gap: tokens.spacing.md, alignItems: 'start' }}>
-          <Network size={24} color={tokens.colors.primary[500]} />
+          <Network size={24} color={tokens.colors.infosys.primary} />
           <div>
             <h4 style={{ color: tokens.colors.text.primary, marginBottom: tokens.spacing.sm }}>
               {t('graph.neuralVisualization')}

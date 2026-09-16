@@ -9,6 +9,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 
 /**
  * Dashboard - Overview page with key metrics and recent incidents
+ * Light theme with Infosys Blue branding
  */
 export function Dashboard() {
   const { t } = useTranslation();
@@ -25,16 +26,18 @@ export function Dashboard() {
   };
 
   const headingStyles = {
+    fontFamily: tokens.typography.fontFamily.heading,
     fontSize: tokens.typography.fontSize['3xl'],
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.xl,
   };
 
   const sectionTitleStyles = {
+    fontFamily: tokens.typography.fontFamily.heading,
     fontSize: tokens.typography.fontSize.xl,
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.neutral[900],
+    color: tokens.colors.text.primary,
     marginBottom: tokens.spacing.lg,
     marginTop: tokens.spacing['2xl'],
   };
@@ -49,7 +52,7 @@ export function Dashboard() {
   const statCardsGridStyles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: tokens.spacing.xl,
+    gap: tokens.spacing.lg,
     marginBottom: tokens.spacing['2xl'],
   };
 

@@ -4,6 +4,7 @@ import {
   Map,
   AlertTriangle,
   Video,
+  Grid3x3,
   LineChart,
   Network,
   Box,
@@ -12,7 +13,7 @@ import {
 import { tokens } from '../styles/tokens';
 import { useTranslation } from '../i18n/LanguageContext';
 
-// Grouped menu structure (Apple/iOS Settings style)
+// Grouped menu structure - operational monitoring sections
 const menuGroups = [
   {
     id: 'overview',
@@ -29,6 +30,7 @@ const menuGroups = [
     icon: AlertTriangle,
     items: [
       { id: 'incidents', icon: AlertTriangle, labelKey: 'nav.events', route: '/incidents' },
+      { id: 'camera-wall', icon: Grid3x3, labelKey: 'nav.cameraWall', route: '/camera-wall' },
       { id: 'camera', icon: Video, labelKey: 'nav.camera', route: '/camera' },
     ]
   },
@@ -54,33 +56,33 @@ const menuGroups = [
 
 export function Sidebar() {
   const { t } = useTranslation();
+
   const sidebarStyles = {
     width: tokens.layout.sidebarWidth,
     height: '100vh',
-    background: 'rgba(26, 26, 31, 0.8)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderRight: `1px solid ${tokens.colors.border.default}`,
+    background: tokens.colors.background.elevated, // White
+    borderRight: `1px solid ${tokens.colors.neutral.border}`, // #E5E7EB
     display: 'flex',
     flexDirection: 'column',
-    padding: tokens.spacing.xl,
-    paddingTop: tokens.spacing['2xl'],
-    boxShadow: tokens.shadows.lg,
+    padding: tokens.spacing.lg,
+    paddingTop: tokens.spacing.xl,
+    boxShadow: tokens.shadows.sm, // Subtle shadow
   };
 
   const logoStyles = {
+    fontFamily: tokens.typography.fontFamily.heading, // Inter
     fontSize: tokens.typography.fontSize['2xl'],
-    fontWeight: tokens.typography.fontWeight.bold,
-    color: tokens.colors.primary[500],
-    marginBottom: tokens.spacing['3xl'],
-    textAlign: 'center',
-    letterSpacing: '-0.02em',
+    fontWeight: tokens.typography.fontWeight.semibold,
+    color: tokens.colors.infosys.primary, // #007CC3 - Infosys Blue
+    marginBottom: tokens.spacing['2xl'],
+    paddingLeft: tokens.spacing.md,
+    letterSpacing: '-0.01em',
   };
 
   const navStyles = {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacing.sm,
+    gap: tokens.spacing.xs,
   };
 
   const groupHeaderStyles = {
@@ -88,48 +90,48 @@ export function Sidebar() {
     alignItems: 'center',
     gap: tokens.spacing.sm,
     padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
-    marginTop: tokens.spacing.xl,
-    marginBottom: tokens.spacing.sm,
+    marginTop: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xs,
     fontSize: tokens.typography.fontSize.xs,
     fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    color: tokens.colors.text.tertiary, // #6B7280
+    // NO textTransform: 'uppercase' - avoid generic ALL-CAPS eyebrow labels
   };
 
   const getLinkStyles = (isActive) => ({
     display: 'flex',
     alignItems: 'center',
     gap: tokens.spacing.md,
-    padding: `${tokens.spacing.md} ${tokens.spacing.lg}`,
+    padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
     borderRadius: tokens.borderRadius.md,
     textDecoration: 'none',
     fontSize: tokens.typography.fontSize.sm,
-    fontWeight: isActive ? tokens.typography.fontWeight.semibold : tokens.typography.fontWeight.medium,
-    color: isActive ? tokens.colors.text.primary : tokens.colors.text.secondary,
+    fontWeight: isActive ? tokens.typography.fontWeight.semibold : tokens.typography.fontWeight.normal,
+    color: isActive ? tokens.colors.infosys.dark : tokens.colors.text.secondary, // #005A8F vs #4A5568
     backgroundColor: isActive
-      ? 'rgba(16, 185, 129, 0.15)'
+      ? tokens.colors.infosys.light // #E5F3F9 - subtle blue tint
       : 'transparent',
     borderLeft: isActive
-      ? `3px solid ${tokens.colors.primary[500]}`
-      : '3px solid transparent',
-    boxShadow: isActive
-      ? '0 0 20px rgba(16, 185, 129, 0.2)'
-      : 'none',
-    transform: isActive ? 'translateX(4px)' : 'translateX(0)',
-    transition: `all ${tokens.transitions.normal}`,
+      ? `2px solid ${tokens.colors.infosys.primary}` // #007CC3 - Infosys Blue indicator
+      : '2px solid transparent',
+    // NO glow, NO transform - just simple color changes
+    transition: `background-color ${tokens.transitions.fast}, border-color ${tokens.transitions.fast}`,
   });
 
   return (
     <aside style={sidebarStyles}>
-      <div style={logoStyles}>RoadWatch</div>
+      {/* Logo/Brand */}
+      <div style={logoStyles}>
+        Gaborone RoadWatch
+      </div>
 
+      {/* Navigation groups */}
       <nav style={navStyles}>
         {menuGroups.map((group) => (
           <div key={group.id}>
             {/* Group header with icon */}
             <div style={groupHeaderStyles}>
-              <group.icon size={14} />
+              <group.icon size={12} />
               <span>{t(group.labelKey)}</span>
             </div>
 
@@ -144,11 +146,12 @@ export function Sidebar() {
                 {({ isActive }) => (
                   <>
                     <item.icon
-                      size={20}
+                      size={18}
                       color={isActive
-                        ? tokens.colors.primary[500]
-                        : tokens.colors.text.tertiary
+                        ? tokens.colors.infosys.primary // #007CC3
+                        : tokens.colors.text.tertiary // #6B7280
                       }
+                      strokeWidth={isActive ? 2.5 : 2}
                     />
                     <span>{t(item.labelKey)}</span>
                   </>
@@ -159,11 +162,11 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* Hover styles - subtle background change only */}
       <style>{`
         .sidebar-link:not(.active):hover {
-          background-color: ${tokens.colors.glass.light};
-          transform: translateX(2px);
-          transition: all ${tokens.transitions.normal};
+          background-color: ${tokens.colors.background.grouped}; /* #F0F8FC - very subtle */
+          transition: background-color ${tokens.transitions.fast};
         }
       `}</style>
     </aside>

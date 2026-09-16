@@ -1,49 +1,55 @@
 import { tokens } from '../../styles/tokens';
 
 /**
- * Base Card component with frosted glass effect and rounded corners
- * Apple-style dark mode design
+ * Base Card component - Clean light theme design
+ * Infosys Blue on Light - Operational density
  * @param {Object} props
  * @param {React.ReactNode} props.children - Card content
  * @param {string} props.className - Additional CSS classes
  * @param {'xs'|'sm'|'md'|'lg'|'xl'|'2xl'} props.padding - Padding size (default: 'lg')
- * @param {'sm'|'md'|'lg'|'xl'} props.shadow - Shadow size (default: 'md')
- * @param {'default'|'bordered'|'flat'} props.variant - Card variant (default: 'default')
+ * @param {'default'|'grouped'|'flat'|'alert'} props.variant - Card variant (default: 'default')
  * @param {Object} props.style - Additional inline styles
- * @param {boolean} props.hover - Enable hover lift effect (default: false)
+ * @param {boolean} props.hover - Enable subtle hover effect (default: false)
+ * @param {Function} props.onClick - Click handler
  */
 export function Card({
   children,
   className = '',
   padding = 'lg',
-  shadow = 'md',
   variant = 'default',
   style = {},
   hover = false,
+  onClick,
   ...props
 }) {
   const baseStyles = {
-    background: 'rgba(31, 31, 36, 0.6)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderRadius: tokens.borderRadius.lg,
+    background: tokens.colors.background.elevated, // White
+    borderRadius: tokens.borderRadius.md, // 8px consistent
     padding: tokens.spacing[padding],
-    border: `1px solid ${tokens.colors.border.default}`,
-    transition: `all ${tokens.transitions.normal}`,
+    border: tokens.borders.default, // 1px solid #E5E7EB
+    transition: `background-color ${tokens.transitions.fast}, border-color ${tokens.transitions.fast}`,
+    boxShadow: tokens.shadows.sm, // Subtle shadow
   };
 
   const variantStyles = {
     default: {
-      boxShadow: tokens.shadows[shadow],
+      // Standard white card
     },
-    bordered: {
-      border: `1px solid ${tokens.colors.border.default}`,
-      boxShadow: tokens.shadows.sm,
-    },
-    flat: {
+    grouped: {
+      // Subtle blue tint for grouped content
+      background: tokens.colors.background.grouped, // #F0F8FC
       border: 'none',
       boxShadow: 'none',
-      background: 'rgba(31, 31, 36, 0.4)',
+    },
+    flat: {
+      // No border, no shadow - just background
+      border: 'none',
+      boxShadow: 'none',
+    },
+    alert: {
+      // Alert state with amber border
+      border: tokens.borders.alert, // 2px solid #D97706
+      background: tokens.patterns.alertStripes + ', ' + tokens.colors.background.elevated,
     },
   };
 
@@ -53,13 +59,16 @@ export function Card({
     ...style,
   };
 
+  // Subtle hover effect (NOT lift-and-shadow from avoid list)
   const hoverClass = hover ? 'card-hover' : '';
+  const clickableClass = onClick ? 'card-clickable' : '';
 
   return (
     <>
       <div
-        className={`card ${hoverClass} ${className}`}
+        className={`card ${hoverClass} ${clickableClass} ${className}`}
         style={combinedStyles}
+        onClick={onClick}
         {...props}
       >
         {children}
@@ -67,10 +76,13 @@ export function Card({
 
       <style>{`
         .card-hover:hover {
-          transform: translateY(-2px);
-          box-shadow: ${tokens.shadows.lg};
-          border-color: ${tokens.colors.border.hover};
-          transition: all ${tokens.transitions.normal};
+          /* Subtle background change on hover - NO lift, NO shadow change */
+          background-color: ${tokens.colors.background.hover};
+          border-color: ${tokens.colors.neutral.borderEmphasis};
+        }
+
+        .card-clickable {
+          cursor: pointer;
         }
       `}</style>
     </>

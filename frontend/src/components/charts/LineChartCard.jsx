@@ -3,8 +3,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { tokens } from '../../styles/tokens';
 
 /**
- * LineChartCard component - Recharts line chart wrapped in a card
- * Apple-style dark mode with frosted glass tooltip
+ * LineChartCard component - Line chart for operational monitoring
+ * Light theme with Infosys Blue primary color
+ * Compact padding for information density
  * @param {Object} props
  * @param {Array} props.data - Chart data array
  * @param {Array} props.lines - Array of line configs: [{ dataKey, color, name }]
@@ -20,55 +21,82 @@ export function LineChartCard({
   height = 300
 }) {
   const titleStyles = {
+    fontFamily: tokens.typography.fontFamily.heading,
     fontSize: tokens.typography.fontSize.lg,
     fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.lg,
+    marginBottom: tokens.spacing.md, // Compact spacing
   };
 
-  // Default colors from chart palette (updated for dark mode)
+  // Chart color palette - Infosys Blue primary
   const defaultColors = [
-    tokens.colors.chart.primary,
-    tokens.colors.chart.secondary,
-    tokens.colors.chart.tertiary,
-    tokens.colors.chart.quaternary,
-    tokens.colors.chart.quinary,
+    tokens.colors.chart.primary,     // #007CC3 - Infosys Blue
+    tokens.colors.chart.secondary,   // #059669 - Green
+    tokens.colors.chart.tertiary,    // #3B82F6 - Light blue
+    tokens.colors.chart.quaternary,  // #8B5CF6 - Purple
+    tokens.colors.chart.amber,       // #F59E0B - Amber
   ];
 
   return (
-    <Card>
+    <Card padding="lg">
       {title && <div style={titleStyles}>{title}</div>}
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+        <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          {/* Light theme grid */}
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={tokens.colors.neutral.border} // #E5E7EB
+            opacity={0.5}
+          />
+
+          {/* X-axis with asphalt gray labels */}
           <XAxis
             dataKey={xKey}
             tick={{ fill: tokens.colors.text.secondary, fontSize: 12 }}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke={tokens.colors.neutral.border}
+            tickLine={{ stroke: tokens.colors.neutral.border }}
           />
+
+          {/* Y-axis with tabular numbers */}
           <YAxis
             tick={{ fill: tokens.colors.text.secondary, fontSize: 12 }}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke={tokens.colors.neutral.border}
+            tickLine={{ stroke: tokens.colors.neutral.border }}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
           />
+
+          {/* Light theme tooltip */}
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(26, 26, 31, 0.95)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: `1px solid ${tokens.colors.border.default}`,
-              borderRadius: tokens.borderRadius.md,
-              boxShadow: tokens.shadows.xl,
+              backgroundColor: tokens.colors.background.elevated, // White
+              border: `1px solid ${tokens.colors.neutral.border}`,
+              borderRadius: tokens.borderRadius.sm,
+              boxShadow: tokens.shadows.lg,
               color: tokens.colors.text.primary,
+              fontSize: tokens.typography.fontSize.sm,
             }}
-            labelStyle={{ color: tokens.colors.text.primary }}
-            itemStyle={{ color: tokens.colors.text.secondary }}
+            labelStyle={{
+              color: tokens.colors.text.primary,
+              fontWeight: tokens.typography.fontWeight.medium,
+              marginBottom: tokens.spacing.xs,
+            }}
+            itemStyle={{
+              color: tokens.colors.text.secondary,
+              fontSize: tokens.typography.fontSize.sm,
+            }}
           />
+
+          {/* Legend */}
           <Legend
             wrapperStyle={{
               fontSize: tokens.typography.fontSize.sm,
               color: tokens.colors.text.secondary,
+              paddingTop: tokens.spacing.sm,
             }}
+            iconType="line"
           />
+
+          {/* Lines */}
           {lines.map((line, index) => (
             <Line
               key={line.dataKey}
@@ -76,8 +104,8 @@ export function LineChartCard({
               dataKey={line.dataKey}
               stroke={line.color || defaultColors[index % defaultColors.length]}
               strokeWidth={2}
-              dot={{ r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={{ r: 3, strokeWidth: 0 }}
+              activeDot={{ r: 5, strokeWidth: 0 }}
               name={line.name || line.dataKey}
             />
           ))}

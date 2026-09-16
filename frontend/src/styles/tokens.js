@@ -1,86 +1,70 @@
 // Design System Tokens
-// Apple-style dark mode with green accent (road safety theme)
+// Infosys Blue on Light - Road Infrastructure Monitoring Theme
+// Built for operational density and clarity, not marketing aesthetics
 
 export const tokens = {
   colors: {
-    // Dark background system (Apple-style near-black)
+    // Light background system (subtle warm gray, not stark white)
     background: {
-      primary: '#111114',      // Main app background
-      secondary: '#1A1A1F',    // Elevated surfaces
-      tertiary: '#1F1F24',     // Card backgrounds
-      elevated: '#252529',     // Floating elements
+      base: '#FAFAF9',        // Main app background (very light warm gray)
+      elevated: '#FFFFFF',    // Primary cards, modals
+      grouped: '#F0F8FC',     // Subtle Infosys Blue tint for sectioning
+      hover: '#E5F3F9',       // Hover/selected states (8-10% Blue tint)
     },
 
-    // Primary green palette (adjusted for dark mode visibility)
-    primary: {
-      50: '#ECFDF5',
-      100: '#D1FAE5',
-      400: '#34D399',
-      500: '#10B981',    // Main green accent (brighter for dark mode)
-      600: '#059669',
-      700: '#047857',
+    // Infosys Blue tonal range (primary brand color)
+    infosys: {
+      primary: '#007CC3',     // Primary actions, active indicators, traffic flow
+      dark: '#005A8F',        // Text on light backgrounds, headers, links
+      light: '#E5F3F9',       // Backgrounds, hover states
+      tint: '#F0F8FC',        // Subtle zone differentiation
     },
 
-    // Text colors optimized for dark backgrounds
-    text: {
-      primary: '#FFFFFF',      // Headings, emphasis
-      secondary: '#A1A1AA',    // Body text (zinc-400)
-      tertiary: '#71717A',     // Muted text (zinc-500)
-      disabled: '#52525B',     // Disabled states (zinc-600)
-    },
-
-    // Borders for frosted glass cards
-    border: {
-      default: 'rgba(255, 255, 255, 0.1)',
-      hover: 'rgba(255, 255, 255, 0.2)',
-      active: 'rgba(255, 255, 255, 0.3)',
-    },
-
-    // Glass overlay backgrounds
-    glass: {
-      light: 'rgba(255, 255, 255, 0.05)',
-      medium: 'rgba(255, 255, 255, 0.08)',
-      heavy: 'rgba(255, 255, 255, 0.12)',
-    },
-
-    // Neutral grays (legacy - keeping for backward compatibility)
+    // Neutrals (warm gray scale - infrastructure-grounded)
     neutral: {
-      0: '#ffffff',
-      50: '#fafafa',
-      100: '#f5f5f5',
-      200: '#e5e5e5',
-      300: '#d4d4d4',
-      500: '#737373',
-      700: '#404040',
-      900: '#171717',
+      asphalt: '#4A5568',     // Secondary text, infrastructure labels (ties to road surfaces)
+      border: '#E5E7EB',      // Dividers, inactive borders
+      borderEmphasis: '#D1D5DB', // Active section borders
     },
 
-    // Severity colors (brighter for dark mode)
-    severity: {
-      fatal: '#EF4444',        // Brighter red
-      serious: '#FB923C',      // Brighter orange
-      minor: '#FCD34D',        // Brighter yellow
-      info: '#60A5FA',         // Brighter blue
+    // Text colors for light theme
+    text: {
+      primary: '#1A1A1A',     // Body text, headings
+      secondary: '#4A5568',   // Secondary text (asphalt gray - infrastructure feel)
+      tertiary: '#6B7280',    // Metadata, timestamps (darkened from original #9CA3AF for contrast)
+      disabled: '#9CA3AF',    // Disabled states
     },
 
-    // Status colors (adjusted for dark mode)
+    // Functional accents (drawn from road safety conventions)
+    alert: {
+      amber: '#D97706',       // Warnings, moderate alerts (road marking amber/yellow)
+      critical: '#DC2626',    // Fatal crashes, critical states
+      moderateOrange: '#F59E0B', // Moderate crash severity
+    },
+
     status: {
-      online: '#10B981',       // Green (matches primary)
-      offline: '#6B7280',
-      warning: '#F59E0B',
-      error: '#EF4444',
-      dispatched: '#60A5FA',
-      notified: '#F59E0B',
-      inProgress: '#10B981',
+      available: '#059669',   // Parking availability, success states (road green)
+      online: '#059669',      // System online
+      offline: '#6B7280',     // System offline
+      warning: '#D97706',     // Warning state
+      error: '#DC2626',       // Error state
     },
 
-    // Chart colors (professional palette)
+    // Chart colors (professional, functional)
     chart: {
-      primary: '#10B981',      // Green
-      secondary: '#60A5FA',    // Blue
-      tertiary: '#F59E0B',     // Amber
-      quaternary: '#8b5cf6',   // Purple
-      quinary: '#ec4899',      // Pink
+      primary: '#007CC3',     // Infosys Blue for main metrics
+      secondary: '#059669',   // Green for availability/success
+      tertiary: '#3B82F6',    // Lighter blue for secondary metrics
+      quaternary: '#8B5CF6',  // Purple
+      amber: '#F59E0B',       // Amber for warnings
+    },
+
+    // Legacy severity (kept for backward compatibility)
+    severity: {
+      fatal: '#DC2626',
+      serious: '#F59E0B',
+      minor: '#FCD34D',
+      info: '#3B82F6',
     },
   },
 
@@ -88,56 +72,60 @@ export const tokens = {
     xs: '4px',
     sm: '8px',
     md: '12px',
-    lg: '16px',
-    xl: '24px',
+    lg: '16px',      // Base unit for operational density
+    xl: '24px',      // Max section padding
     '2xl': '32px',
     '3xl': '48px',
     '4xl': '64px',
   },
 
   borderRadius: {
-    sm: '8px',
-    md: '12px',
-    lg: '16px',      // Primary card radius
-    xl: '20px',      // Large cards, modals
-    '2xl': '24px',
+    sm: '4px',
+    md: '8px',       // Consistent across most elements
+    lg: '12px',      // Large cards
+    xl: '16px',
     full: '9999px',
   },
 
   shadows: {
-    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.15)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3)',
-    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3)',
-    glow: '0 0 20px rgba(16, 185, 129, 0.3)',        // Green glow for primary accent
-    glowHover: '0 0 30px rgba(16, 185, 129, 0.5)',   // Stronger glow on hover
+    // Subtle shadows for light theme (not heavy drop shadows)
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    md: '0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+    lg: '0 4px 6px 0 rgba(0, 0, 0, 0.07)',
+    xl: '0 8px 12px 0 rgba(0, 0, 0, 0.08)',
+    // No glow effects - keep it clean
+    border: '0 0 0 1px rgba(0, 0, 0, 0.05)', // Subtle border shadow
   },
 
   typography: {
     fontFamily: {
-      sans: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', sans-serif",
-      mono: "'SF Mono', 'Monaco', 'Cascadia Code', monospace",
+      // Inter for headings (clarity, professionalism)
+      heading: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      // System fonts for body (better rendering for dense data)
+      sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      // No monospace for "techy" effect - use tabular-nums instead
+      mono: "'SF Mono', 'Monaco', 'Consolas', monospace",
     },
     fontSize: {
       xs: '12px',
       sm: '14px',
-      base: '16px',
-      lg: '18px',
+      base: '14px',    // Base is 14px for information density
+      lg: '16px',
       xl: '20px',
       '2xl': '24px',
-      '3xl': '30px',
-      '4xl': '36px',
+      '3xl': '28px',   // Page titles (not excessive)
+      '4xl': '32px',
     },
     fontWeight: {
       normal: 400,
       medium: 500,
       semibold: 600,
-      bold: 700,
+      // Only use 400, 500, 600 - no excessive weight mixing
     },
     lineHeight: {
-      tight: 1.25,
+      tight: 1.3,
       normal: 1.5,
-      relaxed: 1.75,
+      relaxed: 1.6,
     },
   },
 
@@ -145,20 +133,76 @@ export const tokens = {
     sidebarWidth: '240px',
     topBarHeight: '64px',
     maxContentWidth: '1440px',
+    // Spacing for grids
+    cameraGridGap: '16px',
+    sectionPadding: '24px',
+    chartPadding: '16px',
   },
 
-  // Smooth micro-interactions (200-250ms ease-out)
+  // Minimal transitions (operational tools favor instant feedback)
   transitions: {
     fast: '150ms ease-out',
     normal: '200ms ease-out',
-    slow: '250ms ease-out',
-    spring: '300ms cubic-bezier(0.34, 1.56, 0.64, 1)', // Bouncy Apple feel
+    slow: '300ms ease-out',
+    // No bouncy spring animations
   },
 
-  // Frosted glass backdrop-filter values
-  effects: {
-    glass: 'backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);',
-    glassLight: 'backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);',
-    glassHeavy: 'backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);',
+  // Borders (key to layout structure)
+  borders: {
+    default: '1px solid #E5E7EB',
+    emphasis: '2px solid #007CC3',
+    alert: '2px solid #D97706',
+    subtle: '1px solid #F0F0F0',
+  },
+
+  // Alert animation (the ONE deliberate motion moment)
+  animations: {
+    alertPulse: `
+      @keyframes alert-pulse {
+        0%, 100% {
+          border-color: #D97706;
+          box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+        }
+        50% {
+          border-color: #D97706;
+          box-shadow: 0 0 0 4px rgba(217, 119, 6, 0);
+        }
+      }
+    `,
+  },
+
+  // Subtle background patterns (cartographic feel)
+  patterns: {
+    // Very subtle grid on main background
+    gridSubtle: `
+      linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px),
+      linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px)
+    `,
+    gridSize: '40px 40px',
+
+    // Parking lot grid (only for parking views)
+    parkingGrid: `
+      linear-gradient(rgba(74, 85, 104, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74, 85, 104, 0.03) 1px, transparent 1px)
+    `,
+    parkingGridSize: '30px 30px',
+
+    // Alert diagonal stripes
+    alertStripes: `
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 6px,
+        rgba(217, 119, 6, 0.1) 6px,
+        rgba(217, 119, 6, 0.1) 12px
+      )
+    `,
+  },
+
+  // Status indicator symbols (road-infrastructure inspired)
+  statusSymbols: {
+    online: '─',      // Horizontal bar (road centerline)
+    offline: '╌╌',    // Dashed bar
+    alert: '⚠',       // Standard warning
   },
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { endpoints } from '../utils/api';
+import { authGet } from '../utils/authFetch';
 
 /**
  * Hook to fetch and poll heatmap points data
@@ -16,11 +17,13 @@ export function useHeatmapPoints(enabled, pollInterval = 1000) {
       return;
     }
 
-    const fetchPoints = () => {
-      fetch(endpoints.cameraHeatmapPoints)
-        .then(res => res.json())
-        .then(setPoints)
-        .catch(err => console.error('Error fetching heatmap points:', err));
+    const fetchPoints = async () => {
+      try {
+        const data = await authGet(endpoints.cameraHeatmapPoints);
+        setPoints(data);
+      } catch (err) {
+        console.error('Error fetching heatmap points:', err);
+      }
     };
 
     // Initial fetch

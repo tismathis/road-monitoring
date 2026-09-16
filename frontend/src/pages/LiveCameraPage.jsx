@@ -1,33 +1,41 @@
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { StatCard } from '../components/stats/StatCard';
 import { BarChartCard } from '../components/charts/BarChartCard';
 import { LineChartCard } from '../components/charts/LineChartCard';
-import { useCameraStats } from '../hooks/useCameraStats';
-import { useCameraHistory } from '../hooks/useCameraHistory';
-import { useHeatmapPoints } from '../hooks/useHeatmapPoints';
-import { endpoints } from '../utils/api';
+import { ParkingStatsPanel } from '../components/parking/ParkingStatsPanel';
+import { useGenericCameraData, useCameraList } from '../hooks/useGenericCameraData';
+import { getAuthStreamUrl } from '../utils/authFetch';
 import { tokens } from '../styles/tokens';
-import { Car, Bus, User, Video, Download } from 'lucide-react';
+import { Car, Bus, User, Video, Download, Truck } from 'lucide-react';
 import { exportCameraDataToExcel, exportHistoryToCSV } from '../utils/exportCameraData';
 import { useTranslation } from '../i18n/LanguageContext';
 
 /**
  * LiveCameraPage - Real-time camera analytics with MJPEG stream and heatmap
+ * Now generalized to work with any camera via cameraId URL param
  */
 export function LiveCameraPage() {
   const { t } = useTranslation();
+  const { cameraId = "traffic_main_gaborone" } = useParams();
   const [heatmapOn, setHeatmapOn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Use our custom hooks for data fetching
-  const stats = useCameraStats(3000); // Poll every 3 seconds
-  const history = useCameraHistory(3000);
-  const heatmapPoints = useHeatmapPoints(heatmapOn, 1000); // Poll every 1 second when enabled
+  // Fetch camera list to get camera metadata (type, name, etc.)
+  const cameras = useCameraList(10000); // Poll less frequently
+  const currentCamera = cameras.find(cam => cam.id === cameraId);
+  const isParkingCamera = currentCamera?.type === "parking";
+
+  // Use generic hooks for any camera
+  const stats = useGenericCameraData(cameraId, 'stats', 3000); // Poll every 3 seconds
+  const history = useGenericCameraData(cameraId, 'history', 3000);
+  const heatmapPoints = heatmapOn ? useGenericCameraData(cameraId, 'heatmap-points', 1000) : [];
+  const kpis = useGenericCameraData(cameraId, 'kpis', 3000); // KPIs (parking or traffic)
 
   // Check when data starts arriving
   useEffect(() => {
@@ -176,9 +184,9 @@ export function LiveCameraPage() {
           borderRadius: tokens.borderRadius.md,
           marginBottom: tokens.spacing.lg,
           textAlign: 'center',
-          color: tokens.colors.primary[500],
+          color: tokens.colors.infosys.primary,
           fontSize: tokens.typography.fontSize.base,
-          border: `1px solid ${tokens.colors.primary[500]}40`
+          border: `1px solid ${tokens.colors.infosys.primary}40`
         }}>
           🔄 {t('camera.loading')}
         </div>
@@ -192,7 +200,7 @@ export function LiveCameraPage() {
         marginBottom: tokens.spacing.lg,
         fontSize: tokens.typography.fontSize.sm,
         color: tokens.colors.text.secondary,
-        border: `1px solid ${tokens.colors.border.default}`
+        border: `1px solid ${tokens.colors.neutral.border}`
       }}>
         <strong style={{ color: tokens.colors.text.primary }}>{t('camera.debug')}</strong> {t('camera.statsLoaded')} {Object.keys(stats).length > 0 ? t('common.yes') : t('common.noWaiting')}
         {' | '}
@@ -208,7 +216,7 @@ export function LiveCameraPage() {
             <div style={videoContainerStyles}>
               <img
                 ref={imgRef}
-                src={endpoints.cameraStream}
+                src={getAuthStreamUrl(`http://127.0.0.1:8000/cameras/${cameraId}/stream`)}
                 style={imgStyles}
                 alt={t('camera.alt')}
                 onLoad={() => setImageError(false)}
@@ -276,49 +284,98 @@ export function LiveCameraPage() {
           </Card>
         </div>
 
-        {/* Right column: Stats */}
+        {/* Right column: Stats - CONDITIONAL based on camera type */}
         <div>
-          <div style={statGridStyles}>
-            <StatCard
-              value={totalObjects}
-              label={t('camera.total')}
-              icon={Video}
-            />
-            {Object.entries(stats).map(([cls, count]) => (
+          {isParkingCamera ? (
+            // Parking-specific dashboard
+            <ParkingStatsPanel kpis={kpis} stats={stats} />
+          ) : (
+            // Traffic camera stats (original)
+            <div style={statGridStyles}>
               <StatCard
-                key={cls}
-                value={count}
-                label={t(`object.${cls}`)}
-                icon={iconMap[cls] || Video}
+                value={totalObjects}
+                label={t('camera.total')}
+                icon={Video}
               />
-            ))}
-          </div>
+              {Object.entries(stats).map(([cls, count]) => (
+                <StatCard
+                  key={cls}
+                  value={count}
+                  label={t(`object.${cls}`)}
+                  icon={iconMap[cls] || Video}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacing.xl }}>
-        <BarChartCard
-          data={barData}
-          dataKey="count"
-          xKey="name"
-          title={t('camera.detectedByType')}
-          color={tokens.colors.chart.secondary}
-          height={250}
-        />
+      {/* KPI Cards - ONLY for traffic cameras */}
+      {!isParkingCamera && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: tokens.spacing.md,
+          marginBottom: tokens.spacing.xl
+        }}>
+          <StatCard
+            value={kpis.flow_rate || 0}
+            label="Flow Rate (vehicles/min)"
+            icon={Car}
+          />
+          <StatCard
+            value={kpis.occupancy_level || "N/A"}
+            label="Occupancy Level"
+            icon={Video}
+          />
+          <StatCard
+            value={kpis.average_dwell_time?.toFixed(1) || "0.0"}
+            label="Avg Dwell Time (s)"
+            icon={User}
+          />
+        </div>
+      )}
 
-        <LineChartCard
-          data={history}
-          lines={[
-            { dataKey: 'car', color: tokens.colors.chart.secondary, name: t('object.car') },
-            { dataKey: 'bus', color: tokens.colors.chart.tertiary, name: t('object.bus') },
-            { dataKey: 'person', color: tokens.colors.chart.primary, name: t('object.person') }
-          ]}
-          xKey="time"
-          title={t('camera.trafficOverTime')}
-          height={250}
-        />
-      </div>
+      {/* Charts row - ONLY for traffic cameras (parking has occupancy chart in ParkingStatsPanel) */}
+      {!isParkingCamera && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacing.xl, marginBottom: tokens.spacing.xl }}>
+            <BarChartCard
+              data={barData}
+              dataKey="count"
+              xKey="name"
+              title={t('camera.detectedByType')}
+              color={tokens.colors.chart.secondary}
+              height={250}
+            />
+
+            <LineChartCard
+              data={history}
+              lines={[
+                { dataKey: 'car', color: tokens.colors.chart.secondary, name: t('object.car') },
+                { dataKey: 'bus', color: tokens.colors.chart.tertiary, name: t('object.bus') },
+                { dataKey: 'person', color: tokens.colors.chart.primary, name: t('object.person') }
+              ]}
+              xKey="time"
+              title={t('camera.trafficOverTime')}
+              height={250}
+            />
+          </div>
+
+          {/* Flow Rate Chart (PART 3) */}
+          <div style={{ marginBottom: tokens.spacing.xl }}>
+            <LineChartCard
+              data={history}
+              lines={[
+                { dataKey: 'flow_rate', color: tokens.colors.chart.tertiary, name: 'Flow Rate (veh/min)' }
+              ]}
+              xKey="time"
+              title="Traffic Flow Rate Over Time"
+              height={250}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

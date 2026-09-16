@@ -52,7 +52,7 @@ export function ParkingMarker({ position, onClick }) {
         display: 'flex',                          // Flexbox for centering
         alignItems: 'center',
         justifyContent: 'center',
-        border: `3px solid ${tokens.colors.neutral[0]}`,  // White border
+        border: `3px solid ${tokens.colors.background.elevated}`,  // White border
         boxShadow: '0 4px 12px rgba(59, 130, 246, 0.5)', // Blue glow
         cursor: 'pointer',                        // Show it's clickable
         animation: 'parking-pulse 2s ease-in-out infinite',  // Pulsing animation

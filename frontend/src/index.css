@@ -1,70 +1,54 @@
 /* Import Inter font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Dark background colors (Apple-style) */
-  --color-bg-primary: #111114;
-  --color-bg-secondary: #1A1A1F;
-  --color-bg-tertiary: #1F1F24;
-  --color-bg-elevated: #252529;
+  /* Light background system - Infosys Blue on Light */
+  --color-bg-base: #FAFAF9;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-grouped: #F0F8FC;
+  --color-bg-hover: #E5F3F9;
 
-  /* Primary green accent (adjusted for dark mode) */
-  --color-primary-50: #ECFDF5;
-  --color-primary-100: #D1FAE5;
-  --color-primary-400: #34D399;
-  --color-primary-500: #10B981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
+  /* Infosys Blue tonal range */
+  --color-infosys-primary: #007CC3;
+  --color-infosys-dark: #005A8F;
+  --color-infosys-light: #E5F3F9;
+  --color-infosys-tint: #F0F8FC;
 
-  /* Text colors for dark backgrounds */
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #A1A1AA;
-  --color-text-tertiary: #71717A;
-  --color-text-disabled: #52525B;
+  /* Neutrals - infrastructure grounded */
+  --color-asphalt: #4A5568;
+  --color-border: #E5E7EB;
+  --color-border-emphasis: #D1D5DB;
 
-  /* Borders for frosted glass */
-  --color-border-default: rgba(255, 255, 255, 0.1);
-  --color-border-hover: rgba(255, 255, 255, 0.2);
-  --color-border-active: rgba(255, 255, 255, 0.3);
+  /* Text colors for light theme */
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #4A5568;
+  --color-text-tertiary: #6B7280;
+  --color-text-disabled: #9CA3AF;
 
-  /* Glass overlay backgrounds */
-  --color-glass-light: rgba(255, 255, 255, 0.05);
-  --color-glass-medium: rgba(255, 255, 255, 0.08);
-  --color-glass-heavy: rgba(255, 255, 255, 0.12);
+  /* Functional accents - road safety conventions */
+  --color-alert-amber: #D97706;
+  --color-alert-critical: #DC2626;
+  --color-alert-moderate: #F59E0B;
 
-  /* Legacy neutral colors (for backward compatibility) */
-  --color-neutral-0: #ffffff;
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f5f5f5;
-  --color-neutral-200: #e5e5e5;
-  --color-neutral-300: #d4d4d4;
-  --color-neutral-500: #737373;
-  --color-neutral-700: #404040;
-  --color-neutral-900: #171717;
-
-  /* Severity colors (brighter for dark mode) */
-  --color-severity-fatal: #EF4444;
-  --color-severity-serious: #FB923C;
-  --color-severity-minor: #FCD34D;
-  --color-severity-info: #60A5FA;
-
-  /* Status colors (adjusted for dark mode) */
-  --color-status-online: #10B981;
+  /* Status colors */
+  --color-status-available: #059669;
+  --color-status-online: #059669;
   --color-status-offline: #6B7280;
-  --color-status-warning: #F59E0B;
-  --color-status-error: #EF4444;
-  --color-status-dispatched: #60A5FA;
-  --color-status-notified: #F59E0B;
-  --color-status-in-progress: #10B981;
+  --color-status-warning: #D97706;
+  --color-status-error: #DC2626;
 
   /* Chart colors */
-  --color-chart-primary: #10B981;
-  --color-chart-secondary: #60A5FA;
-  --color-chart-tertiary: #F59E0B;
-  --color-chart-quaternary: #8b5cf6;
-  --color-chart-quinary: #ec4899;
+  --color-chart-primary: #007CC3;
+  --color-chart-secondary: #059669;
+  --color-chart-tertiary: #3B82F6;
 
-  /* Spacing */
+  /* Legacy severity (backward compatibility) */
+  --color-severity-fatal: #DC2626;
+  --color-severity-serious: #F59E0B;
+  --color-severity-minor: #FCD34D;
+  --color-severity-info: #3B82F6;
+
+  /* Spacing - operational density */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
@@ -72,45 +56,39 @@
   --spacing-xl: 24px;
   --spacing-2xl: 32px;
   --spacing-3xl: 48px;
-  --spacing-4xl: 64px;
 
-  /* Border radius (Apple-style rounded) */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /* Border radius - consistent 8px */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows (soft, dark mode optimized) */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.15);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.3);
-  --shadow-glow-hover: 0 0 30px rgba(16, 185, 129, 0.5);
+  /* Subtle shadows for light theme */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 6px 0 rgba(0, 0, 0, 0.07);
+  --shadow-xl: 0 8px 12px 0 rgba(0, 0, 0, 0.08);
 
-  /* Typography (Apple font stack) */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', sans-serif;
-  --font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+  /* Typography */
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --font-size-xs: 12px;
   --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 18px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
-  --font-size-3xl: 30px;
-  --font-size-4xl: 36px;
+  --font-size-3xl: 28px;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
 
-  --line-height-tight: 1.25;
+  --line-height-tight: 1.3;
   --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
+  --line-height-relaxed: 1.6;
 
   /* Layout */
   --sidebar-width: 240px;
@@ -122,14 +100,19 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  transition: background-color 200ms ease-out, color 200ms ease-out;
 }
 
 body {
   font-family: var(--font-sans);
   font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  /* Light background with subtle grid (cartographic feel) */
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px),
+    #FAFAF9;
+  background-size: 40px 40px, 40px 40px, 100%;
+  min-height: 100vh;
   line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -142,34 +125,26 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
-  letter-spacing: -0.02em;
   margin: 0;
 }
 
 h1 {
-  font-size: var(--font-size-4xl);
-}
-
-h2 {
   font-size: var(--font-size-3xl);
 }
 
-h3 {
-  font-size: var(--font-size-2xl);
-}
-
-h4 {
+h2 {
   font-size: var(--font-size-xl);
 }
 
-h5 {
+h3 {
   font-size: var(--font-size-lg);
 }
 
-h6 {
+h4, h5, h6 {
   font-size: var(--font-size-base);
 }
 
@@ -182,44 +157,44 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out;
 }
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-/* Dark mode scrollbar */
+/* Light theme scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-primary);
+  background: var(--color-bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-primary-500);
+  background: var(--color-infosys-primary);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary-400);
+  background: var(--color-infosys-dark);
 }
 
-/* Leaflet map overrides for dark mode */
+/* Leaflet map overrides for light theme */
 .leaflet-container {
   font-family: var(--font-sans);
+  background: #F5F5F5 !important; /* Light gray for map background */
 }
 
 .leaflet-popup-content-wrapper {
-  background: rgba(26, 26, 31, 0.95) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--color-border-default);
-  box-shadow: var(--shadow-xl) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-lg) !important;
   color: var(--color-text-primary);
 }
 
@@ -230,25 +205,57 @@ button:disabled {
 .leaflet-popup-content {
   margin: 12px;
   color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
 }
 
 .leaflet-control-zoom a {
-  background-color: rgba(26, 26, 31, 0.9) !important;
+  background-color: var(--color-bg-elevated) !important;
   color: var(--color-text-primary) !important;
-  border: 1px solid var(--color-border-default) !important;
+  border: 1px solid var(--color-border) !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background-color: rgba(31, 31, 36, 0.9) !important;
-  border-color: var(--color-border-hover) !important;
+  background-color: var(--color-bg-hover) !important;
+  border-color: var(--color-infosys-primary) !important;
 }
 
-/* Pulse animation for status indicators */
-@keyframes pulse {
+/* Tabular numbers for data alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Alert pulse animation (THE ONE deliberate motion moment) */
+@keyframes alert-pulse {
   0%, 100% {
-    opacity: 1;
+    border-color: var(--color-alert-amber);
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
   }
   50% {
-    opacity: 0.5;
+    border-color: var(--color-alert-amber);
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0);
   }
+}
+
+.alert-pulse {
+  animation: alert-pulse 2s ease-in-out 3;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus states for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-infosys-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-infosys-primary);
+  outline-offset: 2px;
 }

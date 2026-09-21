@@ -1,201 +1,123 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { SystemHealthStrip } from '../components/system/SystemHealthStrip';
-import { AlertsPanel } from '../components/alerts/AlertsPanel';
+import { Video, MapPin, Camera as CameraIcon, AlertTriangle, Clock } from 'lucide-react';
+
+import { ConsoleLayout } from '../layouts/ConsoleLayout';
 import { useCameraList } from '../hooks/useGenericCameraData';
 import { getAuthStreamUrl } from '../utils/authFetch';
-import { tokens } from '../styles/tokens';
-import { Video, MapPin } from 'lucide-react';
+import { useTranslation } from '../i18n/LanguageContext';
+import { Badge } from '../components/console-ui/badge';
+import { SectionHeader } from '../components/console-ui/panel';
+import { GbLoading } from '../components/console-ui/loading';
+import { NemopointMark } from '../components/console-ui/nemopoint-mark';
 
-/**
- * CameraWallPage - Command center camera grid
- * Light theme, operational density, information-first layout
- * NOT identical cards everywhere - using spatial zones instead
- */
+// Nemopoint mark styling on each camera tile — tweak these to adjust the look.
+const TILE_MARK_INSET = 'inset-0'; // gap from the tile's edges; inset-0 = fills the whole tile
+const TILE_MARK_OPACITY = 'opacity-[0.22]';
+
 export function CameraWallPage() {
-  const cameras = useCameraList(5000); // Poll every 5 seconds
+  const { t } = useTranslation();
+  const cameras = useCameraList(5000);
   const navigate = useNavigate();
 
-  const containerStyles = {
-    maxWidth: tokens.layout.maxContentWidth,
-    margin: '0 auto',
-    width: '100%',
-  };
-
-  const headingStyles = {
-    fontFamily: tokens.typography.fontFamily.heading, // Inter
-    fontSize: tokens.typography.fontSize['3xl'],
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.lg,
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacing.md,
-  };
-
-  // Compact status bar - inline, NO card wrapper (from design plan)
-  const statusBarStyles = {
-    padding: `${tokens.spacing.md} 0`,
-    marginBottom: tokens.spacing.lg,
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacing.xl,
-  };
-
-  // Camera grid with operational density (16px gaps)
-  const gridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: tokens.layout.cameraGridGap, // 16px
-  };
-
-  const tileStyles = {
-    cursor: 'pointer',
-    transition: `background-color ${tokens.transitions.fast}, border-color ${tokens.transitions.fast}`,
-    position: 'relative',
-  };
-
-  const previewStyles = {
-    width: '100%',
-    height: '180px',
-    objectFit: 'cover',
-    borderRadius: `${tokens.borderRadius.md} ${tokens.borderRadius.md} 0 0`,
-    marginBottom: tokens.spacing.sm,
-    background: '#F5F5F5', // Light gray placeholder
-  };
-
-  const infoRowStyles = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: tokens.spacing.sm,
-  };
-
-  const nameStyles = {
-    fontFamily: tokens.typography.fontFamily.heading,
-    fontSize: tokens.typography.fontSize.lg,
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.xs,
-  };
-
-  const locationStyles = {
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary, // Asphalt gray
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacing.xs,
-  };
-
-  // Compact stat rows - left-aligned, NOT cards (from design plan)
-  const statsRowStyles = {
-    display: 'flex',
-    gap: tokens.spacing.sm,
-    marginTop: tokens.spacing.sm,
-    flexWrap: 'wrap',
-  };
-
-  const handleTileClick = (camera) => {
-    navigate(`/camera/${camera.id}`);
-  };
+  const onlineCount = cameras.filter((c) => c.is_online).length;
+  const offlineCount = cameras.length - onlineCount;
 
   return (
-    <div style={containerStyles}>
-      {/* Page heading */}
-      <h1 style={headingStyles}>
-        <Video size={28} color={tokens.colors.infosys.primary} />
-        Camera Monitoring
-      </h1>
-
-      {/* System Health Strip - inline status bar, NOT a card */}
-      <div style={statusBarStyles}>
-        <SystemHealthStrip />
-      </div>
-
-      {/* Main layout: Camera grid + Alerts panel */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 320px',
-        gap: tokens.spacing.xl,
-      }}>
-        {/* Left: Camera grid */}
-        <div>
-          {cameras.length === 0 && (
-            <Card padding="xl" variant="grouped">
-              <div style={{
-                textAlign: 'center',
-                color: tokens.colors.text.secondary,
-                padding: tokens.spacing.xl,
-              }}>
-                <Video size={48} style={{ opacity: 0.3, marginBottom: tokens.spacing.md }} />
-                <div style={{ fontSize: tokens.typography.fontSize.lg, marginBottom: tokens.spacing.sm }}>
-                  No cameras available
-                </div>
-                <div style={{ fontSize: tokens.typography.fontSize.sm }}>
-                  Check backend configuration and ensure cameras are running.
-                </div>
-              </div>
-            </Card>
-          )}
-
-          <div style={gridStyles}>
-            {cameras.map((camera) => (
-              <Card
-                key={camera.id}
-                padding="md" // Compact padding for density
-                hover={true}
-                style={tileStyles}
-                onClick={() => handleTileClick(camera)}
-              >
-                {/* Live preview */}
-                <img
-                  src={getAuthStreamUrl(camera.thumbnail_url)}
-                  alt={camera.name}
-                  style={previewStyles}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-
-                {/* Info row with name and status badge */}
-                <div style={infoRowStyles}>
-                  <div style={{ flex: 1 }}>
-                    <div style={nameStyles}>{camera.name}</div>
-                    <div style={locationStyles}>
-                      <MapPin size={12} />
-                      {camera.location}
-                    </div>
-                  </div>
-                  <Badge
-                    variant={camera.is_online ? 'online' : 'offline'}
-                    size="sm"
-                  >
-                    {camera.is_online ? 'Online' : 'Offline'}
-                  </Badge>
-                </div>
-
-                {/* Live count badges - compact, info badges */}
-                {camera.stats_preview && Object.keys(camera.stats_preview).length > 0 && (
-                  <div style={statsRowStyles}>
-                    {Object.entries(camera.stats_preview).map(([key, val]) => (
-                      <Badge key={key} variant="info" size="sm">
-                        {key}: {val}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            ))}
+    <ConsoleLayout title="Camera Wall">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-5">
+        {/* inline system health strip — not a card, matches the console's restraint */}
+        <div className="flex items-center gap-6 rounded-[8px] border border-gb-border bg-gb-card px-4 py-3 text-[12.5px] text-gb-muted-foreground">
+          <div className="flex items-center gap-2">
+            <CameraIcon size={15} className="text-gb-success" />
+            <span>
+              <strong className="gb-num text-gb-foreground">{onlineCount}</strong> {t('console.live').toLowerCase()}
+            </span>
           </div>
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={15} className="text-gb-muted-foreground" />
+            <span>
+              <strong className="gb-num text-gb-foreground">{offlineCount}</strong> {t('console.offline').toLowerCase()}
+            </span>
+          </div>
+          <Badge variant="success" className="ml-auto">
+            {t('console.systemNormal')}
+          </Badge>
         </div>
 
-        {/* Right: Alerts panel */}
-        <AlertsPanel />
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
+          {/* LEFT: camera grid */}
+          <div>
+            {cameras.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-[8px] border border-gb-border bg-gb-card py-20">
+                <GbLoading />
+                <div className="text-[13px] text-gb-muted-foreground">No cameras available</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {cameras.map((camera) => (
+                  <button
+                    key={camera.id}
+                    type="button"
+                    onClick={() => navigate(`/camera/${camera.id}`)}
+                    className="group flex flex-col overflow-hidden rounded-[8px] border border-gb-border bg-gb-card text-left transition-colors hover:border-gb-primary/40"
+                  >
+                    <div className="relative aspect-video bg-gb-background-2">
+                      {/* Nemopoint mark plays as the tile's live preview — behind the real
+                          thumbnail, so it reads through whenever the feed frame is slow to
+                          arrive or unavailable, rather than leaving a blank box. */}
+                      <div className={`absolute ${TILE_MARK_INSET} flex items-center justify-center ${TILE_MARK_OPACITY}`}>
+                        <NemopointMark size="fill" loop grey className="shrink-0" />
+                      </div>
+                      <img
+                        src={getAuthStreamUrl(camera.thumbnail_url)}
+                        alt={camera.name}
+                        className="relative h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                      <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-[4px] bg-black/60 px-1.5 py-0.5">
+                        <span className={`size-1.5 rounded-full ${camera.is_online ? 'bg-gb-success' : 'bg-gb-muted-foreground'}`} />
+                        <span className={`text-[9px] font-bold uppercase tracking-wide ${camera.is_online ? 'text-gb-success' : 'text-gb-muted-foreground'}`}>
+                          {camera.is_online ? t('console.live') : t('console.offline')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-start justify-between gap-2 p-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-semibold text-gb-foreground">{camera.name}</div>
+                        <div className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-gb-muted-foreground">
+                          <MapPin size={11} />
+                          {camera.location}
+                        </div>
+                      </div>
+                    </div>
+                    {camera.stats_preview && Object.keys(camera.stats_preview).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 px-3 pb-3">
+                        {Object.entries(camera.stats_preview).map(([key, val]) => (
+                          <Badge key={key} variant="default" className="gb-num">
+                            {key}: {val}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: alerts panel */}
+          <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+            <SectionHeader title="Active Alerts" tone="warning" />
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <Clock size={30} className="text-gb-muted-foreground/40" />
+              <div className="text-[13px] font-medium text-gb-foreground">No active alerts</div>
+              <div className="text-[11.5px] text-gb-muted-foreground">Crash detection coming soon</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </ConsoleLayout>
   );
 }

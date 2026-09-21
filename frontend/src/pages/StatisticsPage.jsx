@@ -1,130 +1,62 @@
-import { StatCard } from '../components/stats/StatCard';
-import { BarChartCard } from '../components/charts/BarChartCard';
-import { LineChartCard } from '../components/charts/LineChartCard';
-import { PieChartCard } from '../components/charts/PieChartCard';
-import { useStatsData } from '../hooks/useStatsData';
-import { tokens } from '../styles/tokens';
 import { AlertTriangle, Skull } from 'lucide-react';
+
+import { ConsoleLayout } from '../layouts/ConsoleLayout';
+import { useStatsData } from '../hooks/useStatsData';
 import { useTranslation } from '../i18n/LanguageContext';
+import { StatTile } from '../components/console-ui/panel';
+import { GbBarChart, GbLineChart, GbPieChart } from '../components/console-ui/charts';
+import { GbLoading } from '../components/console-ui/loading';
 
-const SEVERITY_COLORS = {
-  fatal: tokens.colors.severity.fatal,
-  serious_injury: tokens.colors.severity.serious,
-  minor: tokens.colors.severity.minor
-};
-
-/**
- * StatisticsPage - Historical crash statistics dashboard
- */
 export function StatisticsPage() {
   const { t } = useTranslation();
   const { byYear, bySeverity, totalCrashes, totalFatalities, loading } = useStatsData();
-  const localizedSeverityData = bySeverity.map((row) => ({
-    ...row,
-    severity: t(`severity.${row.severity}`),
-  }));
-
-  if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
-        fontSize: tokens.typography.fontSize.lg,
-        color: tokens.colors.neutral[500]
-      }}>
-        {t('stats.loading')}
-      </div>
-    );
-  }
-
-  const containerStyles = {
-    maxWidth: tokens.layout.maxContentWidth,
-    margin: '0 auto',
-  };
-
-  const headingStyles = {
-    fontSize: tokens.typography.fontSize['3xl'],
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.xl,
-  };
-
-  const gridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: tokens.spacing.xl,
-    marginBottom: tokens.spacing.xl,
-  };
-
-  const chartGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-    gap: tokens.spacing.xl,
-  };
+  const localizedSeverityData = bySeverity.map((row) => ({ ...row, severity: t(`severity.${row.severity}`) }));
 
   return (
-    <div style={containerStyles}>
-      <h1 style={headingStyles}>{t('stats.title')}</h1>
-
-      {/* Summary stat cards */}
-      <div style={gridStyles}>
-        <StatCard
-          value={totalCrashes}
-          label={t('stats.totalCrashes')}
-          icon={AlertTriangle}
-          trend={{ direction: 'neutral', percentage: 0 }}
-        />
-        <StatCard
-          value={totalFatalities}
-          label={t('stats.totalDeaths')}
-          icon={Skull}
-          trend={{ direction: 'down', percentage: 0 }}
-        />
-      </div>
-
-      {/* Charts grid */}
-      <div style={chartGridStyles}>
-        {/* Crashes by year - bar chart */}
-        <div style={{ gridColumn: 'span 2' }}>
-          <BarChartCard
-            data={byYear}
-            dataKey="total"
-            xKey="year"
-            title={t('stats.crashesByYear')}
-            color={tokens.colors.chart.secondary}
-            height={300}
-          />
+    <ConsoleLayout title={t('stats.title')}>
+      {loading ? (
+        <div className="flex h-full items-center justify-center">
+          <GbLoading label={t('stats.loading')} />
         </div>
+      ) : (
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatTile value={totalCrashes} label={t('stats.totalCrashes')} icon={AlertTriangle} />
+            <StatTile
+              value={totalFatalities}
+              label={t('stats.totalDeaths')}
+              icon={Skull}
+              valueClassName="text-gb-destructive"
+            />
+          </div>
 
-        {/* Fatalities trend - line chart */}
-        <div style={{ gridColumn: 'span 2' }}>
-          <LineChartCard
-            data={byYear}
-            lines={[
-              { dataKey: 'fatalities', color: tokens.colors.severity.fatal, name: t('stats.deaths') }
-            ]}
-            xKey="year"
-            title={t('stats.deathTrend')}
-            height={300}
-          />
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+              <GbBarChart data={byYear} dataKey="total" xKey="year" title={t('stats.crashesByYear')} height={280} />
+            </div>
+            <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+              <GbLineChart
+                data={byYear}
+                lines={[{ dataKey: 'fatalities', color: 'var(--gb-destructive)', name: t('stats.deaths') }]}
+                xKey="year"
+                title={t('stats.deathTrend')}
+                height={280}
+                showLegend={false}
+              />
+            </div>
+            <div className="rounded-[8px] border border-gb-border bg-gb-card p-5 xl:col-span-2">
+              <GbPieChart
+                data={localizedSeverityData}
+                dataKey="total"
+                nameKey="severity"
+                title={t('stats.severityDistribution')}
+                colors={['var(--gb-destructive)', 'var(--gb-warning)', '#8B7FD9']}
+                height={300}
+              />
+            </div>
+          </div>
         </div>
-
-        {/* Severity distribution - pie chart */}
-        <PieChartCard
-          data={localizedSeverityData}
-          dataKey="total"
-          nameKey="severity"
-          title={t('stats.severityDistribution')}
-          colors={[
-            SEVERITY_COLORS.fatal,
-            SEVERITY_COLORS.serious_injury,
-            SEVERITY_COLORS.minor
-          ]}
-          height={300}
-        />
-      </div>
-    </div>
+      )}
+    </ConsoleLayout>
   );
 }

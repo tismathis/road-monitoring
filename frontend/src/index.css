@@ -1,5 +1,8 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
 /* Import Inter font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   /* Light background system - Infosys Blue on Light */
@@ -96,73 +99,84 @@
   --max-content-width: 1440px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Wrapped in Tailwind base layer: unlayered CSS always beats layered CSS
+   regardless of source order or specificity, and Tailwind utilities live
+   in a layer, so an unlayered reset here silently zeroed every padding
+   and margin utility used anywhere in this file. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
-body {
-  font-family: var(--font-sans);
-  font-size: var(--font-size-base);
-  color: var(--color-text-primary);
-  /* Light background with subtle grid (cartographic feel) */
-  background:
-    linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px),
-    linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px),
-    #FAFAF9;
-  background-size: 40px 40px, 40px 40px, 100%;
-  min-height: 100vh;
-  line-height: var(--line-height-normal);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Wrapped in Tailwind's base layer for the same reason as the reset above:
+   unlayered bare-element rules (body, h1-h6, p, button) were beating every
+   Tailwind utility applied to those same elements anywhere in the app. */
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    /* Light background with subtle grid (cartographic feel) */
+    background:
+      linear-gradient(90deg, rgba(0,0,0,0.01) 1px, transparent 1px),
+      linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px),
+      #FAFAF9;
+    background-size: 40px 40px, 40px 40px, 100%;
+    min-height: 100vh;
+    line-height: var(--line-height-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
+  #root {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  margin: 0;
-}
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    margin: 0;
+  }
 
-h1 {
-  font-size: var(--font-size-3xl);
-}
+  h1 {
+    font-size: var(--font-size-3xl);
+  }
 
-h2 {
-  font-size: var(--font-size-xl);
-}
+  h2 {
+    font-size: var(--font-size-xl);
+  }
 
-h3 {
-  font-size: var(--font-size-lg);
-}
+  h3 {
+    font-size: var(--font-size-lg);
+  }
 
-h4, h5, h6 {
-  font-size: var(--font-size-base);
-}
+  h4, h5, h6 {
+    font-size: var(--font-size-base);
+  }
 
-p {
-  margin: 0;
-}
+  p {
+    margin: 0;
+  }
 
-button {
-  font-family: var(--font-sans);
-  cursor: pointer;
-  border: none;
-  background: none;
-  transition: background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out;
-}
+  button {
+    font-family: var(--font-sans);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: background-color 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out;
+  }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 /* Light theme scrollbar */
@@ -253,6 +267,201 @@ button:disabled {
 *:focus-visible {
   outline: 2px solid var(--color-infosys-primary);
   outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Command Console theme — scoped dark system for the Live Map surface only.
+   Namespaced "gb-*" throughout so nothing here collides with the tokens
+   above, which stay in force for every other (light) page.
+   ========================================================================== */
+@theme inline {
+  --color-gb-background: var(--gb-background);
+  --color-gb-background-2: var(--gb-background-2);
+  --color-gb-surface: var(--gb-surface);
+  --color-gb-surface-2: var(--gb-surface-2);
+  --color-gb-foreground: var(--gb-foreground);
+  --color-gb-card: var(--gb-card);
+  --color-gb-card-foreground: var(--gb-card-foreground);
+  --color-gb-popover: var(--gb-popover);
+  --color-gb-popover-foreground: var(--gb-popover-foreground);
+  --color-gb-primary: var(--gb-primary);
+  --color-gb-primary-foreground: var(--gb-primary-foreground);
+  --color-gb-secondary: var(--gb-secondary);
+  --color-gb-secondary-foreground: var(--gb-secondary-foreground);
+  --color-gb-muted: var(--gb-surface);
+  --color-gb-muted-foreground: var(--gb-muted-foreground);
+  --color-gb-accent: var(--gb-accent);
+  --color-gb-accent-foreground: var(--gb-accent-foreground);
+  --color-gb-destructive: var(--gb-destructive);
+  --color-gb-destructive-foreground: var(--gb-destructive-foreground);
+  --color-gb-success: var(--gb-success);
+  --color-gb-warning: var(--gb-warning);
+  --color-gb-border: var(--gb-border);
+  --color-gb-dot: var(--gb-dot);
+  --color-gb-input: var(--gb-input);
+  --color-gb-ring: var(--gb-ring);
+  --font-gb-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* The legacy light-theme h1–h6 rules below target bare elements, so they
+   win over Tailwind utility classes on the same elements inside the
+   console (equal specificity, later in the cascade). Reassert console
+   colors here with a scoped selector so headings stay legible on dark. */
+.gb-console h1,
+.gb-console h2,
+.gb-console h3,
+.gb-console h4,
+.gb-console h5,
+.gb-console h6 {
+  color: var(--gb-foreground);
+  font-family: var(--font-gb-sans);
+}
+
+.gb-console {
+  /* Cool, deep, control-room ground — biased toward the blue end of the
+     charcoal range rather than a neutral warm gray. */
+  --gb-background: #0B0F12;
+  --gb-background-2: #0D131A;
+  --gb-surface: #10161D;
+  --gb-surface-2: #161F27;
+  --gb-card: #10161D;
+  --gb-card-foreground: #F1F6F8;
+  --gb-popover: #10161D;
+  --gb-popover-foreground: #F1F6F8;
+  --gb-foreground: #F1F6F8;
+  --gb-muted-foreground: #7C93A1;
+  --gb-primary: #007CC3;
+  --gb-primary-foreground: #F1F6F8;
+  --gb-secondary: #161F27;
+  --gb-secondary-foreground: #F1F6F8;
+  --gb-accent: #161F27;
+  --gb-accent-foreground: #F1F6F8;
+  --gb-destructive: #E5484D;
+  --gb-destructive-foreground: #F1F6F8;
+  --gb-success: #33C17E;
+  --gb-warning: #E2A53D;
+  --gb-border: rgba(180, 205, 222, 0.09);
+  --gb-dot: rgba(180, 205, 222, 0.22);
+  --gb-input: rgba(180, 205, 222, 0.14);
+  --gb-ring: #007CC3;
+
+  background: var(--gb-background);
+  color: var(--gb-foreground);
+  font-family: var(--font-gb-sans);
+  font-feature-settings: "tnum" 1;
+}
+
+.gb-console .tabular-nums,
+.gb-console .gb-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Fine cartographic graticule — the console's signature ground texture,
+   a flat dot grid, never a gradient wash. */
+.gb-grid-texture {
+  background-image: radial-gradient(circle, rgba(180, 205, 222, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Signature "route tick" divider — short diagonal ticks standing in for a
+   plain hairline where the console wants to read as infrastructure, not app chrome. */
+.gb-route-tick {
+  background-image: repeating-linear-gradient(
+    -55deg,
+    var(--gb-border) 0px,
+    var(--gb-border) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+}
+
+/* Radar-style live pulse — one deliberate motion, used only on the active
+   camera / live indicators. */
+@keyframes gb-radar-pulse {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.gb-radar-ring {
+  animation: gb-radar-pulse 2.4s ease-out infinite;
+}
+
+.gb-console ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.gb-console ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.gb-console ::-webkit-scrollbar-thumb {
+  background: var(--gb-surface-2);
+  border-radius: 4px;
+}
+.gb-console ::-webkit-scrollbar-thumb:hover {
+  background: var(--gb-primary);
+}
+
+/* Leaflet overrides for the console's dark, cooler-filtered basemap. */
+.gb-console .leaflet-container {
+  background: var(--gb-background-2) !important;
+  font-family: var(--font-gb-sans);
+}
+.gb-console .leaflet-tile-pane {
+  /* CARTO's basemaps now gate behind an API key; OSM's standard tiles are
+     the key-free fallback, so we invert them into the console's cool dark
+     register rather than depend on a hosted dark tile service. */
+  filter: invert(94%) hue-rotate(180deg) brightness(0.88) contrast(1.15) saturate(0.5);
+}
+.gb-console .leaflet-popup-content-wrapper {
+  background: var(--gb-card) !important;
+  color: var(--gb-foreground) !important;
+  border: 1px solid var(--gb-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.gb-console .leaflet-popup-content {
+  margin: 12px;
+  font-size: 12px;
+}
+.gb-console .leaflet-popup-content b {
+  color: var(--gb-foreground);
+}
+.gb-console .leaflet-popup-tip {
+  background: var(--gb-card) !important;
+}
+.gb-console .leaflet-control-attribution {
+  background: rgba(11, 15, 18, 0.72) !important;
+  color: var(--gb-muted-foreground) !important;
+  font-size: 9px !important;
+}
+.gb-console .leaflet-control-attribution a {
+  color: var(--gb-muted-foreground) !important;
+}
+
+/* GIS-style zoom control, skinned to match the console's control cluster. */
+.gb-console .leaflet-control-zoom {
+  border: 1px solid var(--gb-border) !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+.gb-console .leaflet-control-zoom a {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  background-color: var(--gb-card) !important;
+  color: var(--gb-muted-foreground) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--gb-border) !important;
+  font-weight: 400;
+}
+.gb-console .leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+.gb-console .leaflet-control-zoom a:hover {
+  background-color: var(--gb-surface-2) !important;
+  color: var(--gb-primary) !important;
 }
 
 button:focus-visible {

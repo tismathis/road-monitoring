@@ -1,50 +1,42 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { StatCard } from '../components/stats/StatCard';
-import { BarChartCard } from '../components/charts/BarChartCard';
-import { LineChartCard } from '../components/charts/LineChartCard';
+import { Car, Bus, User, Video, Download } from 'lucide-react';
+
+import { ConsoleLayout } from '../layouts/ConsoleLayout';
 import { ParkingStatsPanel } from '../components/parking/ParkingStatsPanel';
 import { useGenericCameraData, useCameraList } from '../hooks/useGenericCameraData';
 import { getAuthStreamUrl } from '../utils/authFetch';
-import { tokens } from '../styles/tokens';
-import { Car, Bus, User, Video, Download, Truck } from 'lucide-react';
 import { exportCameraDataToExcel, exportHistoryToCSV } from '../utils/exportCameraData';
 import { useTranslation } from '../i18n/LanguageContext';
+import { Button } from '../components/console-ui/button';
+import { StatTile } from '../components/console-ui/panel';
+import { GbBarChart, GbLineChart } from '../components/console-ui/charts';
+import { GbLoading } from '../components/console-ui/loading';
 
-/**
- * LiveCameraPage - Real-time camera analytics with MJPEG stream and heatmap
- * Now generalized to work with any camera via cameraId URL param
- */
 export function LiveCameraPage() {
   const { t } = useTranslation();
-  const { cameraId = "traffic_main_gaborone" } = useParams();
+  const { cameraId = 'traffic_main_gaborone' } = useParams();
   const [heatmapOn, setHeatmapOn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Fetch camera list to get camera metadata (type, name, etc.)
-  const cameras = useCameraList(10000); // Poll less frequently
-  const currentCamera = cameras.find(cam => cam.id === cameraId);
-  const isParkingCamera = currentCamera?.type === "parking";
+  const cameras = useCameraList(10000);
+  const currentCamera = cameras.find((cam) => cam.id === cameraId);
+  const isParkingCamera = currentCamera?.type === 'parking';
 
-  // Use generic hooks for any camera
-  const stats = useGenericCameraData(cameraId, 'stats', 3000); // Poll every 3 seconds
+  const stats = useGenericCameraData(cameraId, 'stats', 3000);
   const history = useGenericCameraData(cameraId, 'history', 3000);
-  const heatmapPoints = heatmapOn ? useGenericCameraData(cameraId, 'heatmap-points', 1000) : [];
-  const kpis = useGenericCameraData(cameraId, 'kpis', 3000); // KPIs (parking or traffic)
+  const allHeatmapPoints = useGenericCameraData(cameraId, 'heatmap-points', 1000);
+  const heatmapPoints = heatmapOn ? allHeatmapPoints : [];
+  const kpis = useGenericCameraData(cameraId, 'kpis', 3000);
 
-  // Check when data starts arriving
   useEffect(() => {
-    if (Object.keys(stats).length > 0) {
-      setIsLoading(false);
-    }
+    if (Object.keys(stats).length > 0) setIsLoading(false);
   }, [stats]);
 
-  // Draw heatmap on canvas - PRESERVE EXACT LOGIC
+  // Heatmap canvas draw — preserved exactly
   useEffect(() => {
     if (!heatmapOn || !canvasRef.current || !imgRef.current) return;
     const canvas = canvasRef.current;
@@ -56,7 +48,7 @@ export function LiveCameraPage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.globalCompositeOperation = 'lighter';
 
-    heatmapPoints.forEach(p => {
+    heatmapPoints.forEach((p) => {
       const x = p.x * canvas.width;
       const y = p.y * canvas.height;
       const rx = Math.max(p.w * canvas.width, 20) / 2.5;
@@ -64,11 +56,11 @@ export function LiveCameraPage() {
       const radius = Math.max(rx, ry);
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0,    'rgba(255, 0, 0, 0.22)');
-      gradient.addColorStop(0.3,  'rgba(255, 165, 0, 0.16)');
+      gradient.addColorStop(0, 'rgba(255, 0, 0, 0.22)');
+      gradient.addColorStop(0.3, 'rgba(255, 165, 0, 0.16)');
       gradient.addColorStop(0.55, 'rgba(255, 255, 0, 0.10)');
       gradient.addColorStop(0.75, 'rgba(0, 255, 100, 0.06)');
-      gradient.addColorStop(1,    'rgba(0, 100, 255, 0)');
+      gradient.addColorStop(1, 'rgba(0, 100, 255, 0)');
 
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -79,35 +71,14 @@ export function LiveCameraPage() {
     ctx.globalCompositeOperation = 'source-over';
   }, [heatmapPoints, heatmapOn]);
 
-  // Calculate totals and chart data
   const totalObjects = Object.values(stats).reduce((a, b) => a + b, 0);
   const barData = Object.entries(stats).map(([name, count]) => ({ name: t(`object.${name}`), count }));
 
-  // Icon mapping for stat cards
-  const iconMap = {
-    car: Car,
-    bus: Bus,
-    person: User,
-  };
+  const iconMap = { car: Car, bus: Bus, person: User };
 
-  const containerStyles = {
-    maxWidth: tokens.layout.maxContentWidth,
-    margin: '0 auto',
-    width: '100%',
-  };
-
-  const headingStyles = {
-    fontSize: tokens.typography.fontSize['3xl'],
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.xl,
-  };
-
-  // Export handlers
   const handleExportExcel = () => {
     try {
-      const filename = exportCameraDataToExcel(stats, history, heatmapPoints);
-      console.log(`Exported to: ${filename}`);
+      exportCameraDataToExcel(stats, history, heatmapPoints);
     } catch (error) {
       console.error('Export failed:', error);
       alert(t('export.failed'));
@@ -116,266 +87,121 @@ export function LiveCameraPage() {
 
   const handleExportCSV = () => {
     try {
-      const filename = exportHistoryToCSV(history);
-      console.log(`Exported history to: ${filename}`);
+      exportHistoryToCSV(history);
     } catch (error) {
       console.error('CSV export failed:', error);
       alert(t('export.csvFailed'));
     }
   };
 
-  const mainGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: '1.2fr 1fr',
-    gap: tokens.spacing.xl,
-    marginBottom: tokens.spacing.xl,
-  };
-
-  const videoContainerStyles = {
-    position: 'relative',
-  };
-
-  const imgStyles = {
-    width: '100%',
-    borderRadius: tokens.borderRadius.lg,
-    background: '#000',
-    display: 'block',
-  };
-
-  const canvasStyles = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    borderRadius: tokens.borderRadius.lg,
-  };
-
-  const noteStyles = {
-    fontSize: tokens.typography.fontSize.xs,
-    color: tokens.colors.text.secondary,
-    marginTop: tokens.spacing.md,
-    lineHeight: tokens.typography.lineHeight.relaxed,
-  };
-
-  const statGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-    gap: tokens.spacing.md,
-  };
-
-  // Debug: log stats to see if data is coming
-  console.log('Camera stats:', stats);
-  console.log('Camera history:', history);
-
   return (
-    <div style={containerStyles}>
-      <h1 style={headingStyles}>
-        <Video size={32} style={{ display: 'inline', marginRight: tokens.spacing.md, verticalAlign: 'middle' }} />
-        {t('camera.title')}
-      </h1>
+    <ConsoleLayout title={t('camera.title')}>
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-6">
+        {isLoading && (
+          <div className="flex items-center justify-center gap-3 rounded-[8px] border border-gb-primary/30 bg-gb-primary/8 p-4">
+            <GbLoading size={28} />
+            <span className="text-[13px] text-gb-primary">{t('camera.loading')}</span>
+          </div>
+        )}
 
-      {/* Loading indicator */}
-      {isLoading && (
-        <div style={{
-          padding: tokens.spacing.xl,
-          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-          borderRadius: tokens.borderRadius.md,
-          marginBottom: tokens.spacing.lg,
-          textAlign: 'center',
-          color: tokens.colors.infosys.primary,
-          fontSize: tokens.typography.fontSize.base,
-          border: `1px solid ${tokens.colors.infosys.primary}40`
-        }}>
-          🔄 {t('camera.loading')}
-        </div>
-      )}
-
-      {/* Debug info */}
-      <div style={{
-        padding: tokens.spacing.md,
-        backgroundColor: 'rgba(31, 31, 36, 0.6)',
-        borderRadius: tokens.borderRadius.md,
-        marginBottom: tokens.spacing.lg,
-        fontSize: tokens.typography.fontSize.sm,
-        color: tokens.colors.text.secondary,
-        border: `1px solid ${tokens.colors.neutral.border}`
-      }}>
-        <strong style={{ color: tokens.colors.text.primary }}>{t('camera.debug')}</strong> {t('camera.statsLoaded')} {Object.keys(stats).length > 0 ? t('common.yes') : t('common.noWaiting')}
-        {' | '}
-        {t('camera.history')} {history.length} {t('camera.points')}
-        {' | '}
-        {t('camera.totalObjects')} {totalObjects}
-      </div>
-
-      <div style={mainGridStyles}>
-        {/* Left column: Video feed */}
-        <div>
-          <Card padding="lg">
-            <div style={videoContainerStyles}>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
+          {/* LEFT: video */}
+          <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+            <div className="relative overflow-hidden rounded-[6px] bg-black">
               <img
                 ref={imgRef}
                 src={getAuthStreamUrl(`http://127.0.0.1:8000/cameras/${cameraId}/stream`)}
-                style={imgStyles}
+                className="block w-full"
                 alt={t('camera.alt')}
                 onLoad={() => setImageError(false)}
                 onError={() => setImageError(true)}
               />
               {imageError && (
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  padding: tokens.spacing.xl,
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  color: '#fff',
-                  borderRadius: tokens.borderRadius.md,
-                  textAlign: 'center',
-                  fontSize: tokens.typography.fontSize.sm,
-                  zIndex: 10
-                }}>
-                  ⚠️ {t('camera.unavailable')}<br/>
-                  <small>{t('camera.backend')}</small>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/85 p-6 text-center">
+                  <span className="text-[13px] text-gb-foreground">{t('camera.unavailable')}</span>
+                  <span className="text-[11px] text-gb-muted-foreground">{t('camera.backend')}</span>
                 </div>
               )}
-              {heatmapOn && (
-                <canvas
-                  ref={canvasRef}
-                  style={canvasStyles}
-                />
-              )}
+              {heatmapOn && <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />}
             </div>
 
-            <div style={{ marginTop: tokens.spacing.lg, display: 'flex', flexDirection: 'column', gap: tokens.spacing.md }}>
-              <Button
-                variant={heatmapOn ? 'danger' : 'primary'}
-                onClick={() => setHeatmapOn(!heatmapOn)}
-                fullWidth
-              >
+            <div className="mt-4 flex flex-col gap-3">
+              <Button variant={heatmapOn ? 'destructive' : 'default'} onClick={() => setHeatmapOn(!heatmapOn)} className="w-full">
                 {heatmapOn ? t('camera.hideHeatmap') : t('camera.showHeatmap')}
               </Button>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacing.sm }}>
-                <Button
-                  variant="secondary"
-                  icon={Download}
-                  onClick={handleExportExcel}
-                  size="sm"
-                >
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                  <Download size={14} />
                   Excel
                 </Button>
-                <Button
-                  variant="secondary"
-                  icon={Download}
-                  onClick={handleExportCSV}
-                  size="sm"
-                >
+                <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                  <Download size={14} />
                   CSV
                 </Button>
               </div>
             </div>
 
-            <div style={noteStyles}>
+            <p className="mt-4 text-[11.5px] leading-relaxed text-gb-muted-foreground">
               {t('camera.note')}
               {heatmapOn && t('camera.heatmapNote')}
-            </div>
-          </Card>
+            </p>
+          </div>
+
+          {/* RIGHT: stats */}
+          <div>
+            {isParkingCamera ? (
+              <ParkingStatsPanel kpis={kpis} stats={stats} />
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <StatTile value={totalObjects} label={t('camera.total')} icon={Video} />
+                {Object.entries(stats).map(([cls, count]) => (
+                  <StatTile key={cls} value={count} label={t(`object.${cls}`)} icon={iconMap[cls] || Video} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right column: Stats - CONDITIONAL based on camera type */}
-        <div>
-          {isParkingCamera ? (
-            // Parking-specific dashboard
-            <ParkingStatsPanel kpis={kpis} stats={stats} />
-          ) : (
-            // Traffic camera stats (original)
-            <div style={statGridStyles}>
-              <StatCard
-                value={totalObjects}
-                label={t('camera.total')}
-                icon={Video}
-              />
-              {Object.entries(stats).map(([cls, count]) => (
-                <StatCard
-                  key={cls}
-                  value={count}
-                  label={t(`object.${cls}`)}
-                  icon={iconMap[cls] || Video}
+        {!isParkingCamera && (
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <StatTile value={kpis.flow_rate || 0} label="Flow Rate (veh/min)" icon={Car} />
+              <StatTile value={kpis.occupancy_level || 'N/A'} label="Occupancy Level" icon={Video} />
+              <StatTile value={kpis.average_dwell_time?.toFixed(1) || '0.0'} label="Avg Dwell Time (s)" icon={User} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+                <GbBarChart data={barData} dataKey="count" xKey="name" title={t('camera.detectedByType')} height={230} />
+              </div>
+              <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+                <GbLineChart
+                  data={history}
+                  lines={[
+                    { dataKey: 'car', color: 'var(--gb-success)', name: t('object.car') },
+                    { dataKey: 'bus', color: 'var(--gb-warning)', name: t('object.bus') },
+                    { dataKey: 'person', color: 'var(--gb-primary)', name: t('object.person') },
+                  ]}
+                  xKey="time"
+                  title={t('camera.trafficOverTime')}
+                  height={230}
                 />
-              ))}
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+              <GbLineChart
+                data={history}
+                lines={[{ dataKey: 'flow_rate', color: 'var(--gb-primary)', name: 'Flow Rate (veh/min)' }]}
+                xKey="time"
+                title="Traffic Flow Rate Over Time"
+                height={230}
+                showLegend={false}
+              />
+            </div>
+          </>
+        )}
       </div>
-
-      {/* KPI Cards - ONLY for traffic cameras */}
-      {!isParkingCamera && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: tokens.spacing.md,
-          marginBottom: tokens.spacing.xl
-        }}>
-          <StatCard
-            value={kpis.flow_rate || 0}
-            label="Flow Rate (vehicles/min)"
-            icon={Car}
-          />
-          <StatCard
-            value={kpis.occupancy_level || "N/A"}
-            label="Occupancy Level"
-            icon={Video}
-          />
-          <StatCard
-            value={kpis.average_dwell_time?.toFixed(1) || "0.0"}
-            label="Avg Dwell Time (s)"
-            icon={User}
-          />
-        </div>
-      )}
-
-      {/* Charts row - ONLY for traffic cameras (parking has occupancy chart in ParkingStatsPanel) */}
-      {!isParkingCamera && (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacing.xl, marginBottom: tokens.spacing.xl }}>
-            <BarChartCard
-              data={barData}
-              dataKey="count"
-              xKey="name"
-              title={t('camera.detectedByType')}
-              color={tokens.colors.chart.secondary}
-              height={250}
-            />
-
-            <LineChartCard
-              data={history}
-              lines={[
-                { dataKey: 'car', color: tokens.colors.chart.secondary, name: t('object.car') },
-                { dataKey: 'bus', color: tokens.colors.chart.tertiary, name: t('object.bus') },
-                { dataKey: 'person', color: tokens.colors.chart.primary, name: t('object.person') }
-              ]}
-              xKey="time"
-              title={t('camera.trafficOverTime')}
-              height={250}
-            />
-          </div>
-
-          {/* Flow Rate Chart (PART 3) */}
-          <div style={{ marginBottom: tokens.spacing.xl }}>
-            <LineChartCard
-              data={history}
-              lines={[
-                { dataKey: 'flow_rate', color: tokens.colors.chart.tertiary, name: 'Flow Rate (veh/min)' }
-              ]}
-              xKey="time"
-              title="Traffic Flow Rate Over Time"
-              height={250}
-            />
-          </div>
-        </>
-      )}
-    </div>
+    </ConsoleLayout>
   );
 }

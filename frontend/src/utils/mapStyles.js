@@ -43,6 +43,7 @@ export const MAP_STYLES = {
     name: 'OpenStreetMap Standard',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
     maxZoom: 19,
   },
 
@@ -74,4 +75,4 @@ export const MAP_STYLES = {
 
 // Style par défaut utilisé dans l'application
 // Changez cette ligne pour utiliser un autre style
-export const DEFAULT_MAP_STYLE = MAP_STYLES.POSITRON; // ⭐ Style actuel
+export const DEFAULT_MAP_STYLE = MAP_STYLES.OSM_STANDARD; // CARTO basemaps now require an API key; OSM has none. Darkened via CSS filter in the console theme.

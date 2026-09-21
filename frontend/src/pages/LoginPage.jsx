@@ -1,13 +1,26 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { tokens } from '../styles/tokens';
-import { Lock, MapPin } from 'lucide-react';
+
+import { Input } from '../components/console-ui/input';
+import { Card, CardContent } from '../components/console-ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/console-ui/field';
+import BayerGlobe from '../components/console-ui/bayer-globe';
+import LiquidGlassButton from '../components/console-ui/glass-button';
+import { NemopointMark } from '../components/console-ui/nemopoint-mark';
 
 /**
- * LoginPage - Light-themed authentication page
- * Professional Infosys Blue branding, clean and operational
- * First impression of the monitoring system
+ * LoginPage — shadcn login-04 block (form + cover panel inside one card),
+ * retinted to the console's Infosys-blue-on-near-black palette. The cover
+ * panel is a live dithered-globe canvas animation instead of a static image.
+ *
+ * The forgot-password link is decorative — matching the upstream shadcn
+ * demo, which ships it the same way — since this backend has no
+ * password-reset endpoint. Only Username/Password → Sign In is wired to
+ * real auth.
+ *
+ * Wired to the real backend auth flow via useAuth() → POST /auth/login →
+ * JWT stored by AuthContext; ProtectedRoute gates the rest of the app on it.
  */
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -17,6 +30,7 @@ export function LoginPage() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const formRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,215 +47,110 @@ export function LoginPage() {
     }
   };
 
-  const containerStyles = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tokens.colors.background.base, // #FAFAF9
-    padding: tokens.spacing.xl,
-  };
-
-  const cardStyles = {
-    width: '100%',
-    maxWidth: '420px',
-    backgroundColor: tokens.colors.background.elevated, // White
-    borderRadius: tokens.borderRadius.lg,
-    padding: tokens.spacing['3xl'],
-    border: `1px solid ${tokens.colors.neutral.border}`, // #E5E7EB
-    boxShadow: tokens.shadows.xl,
-  };
-
-  const headerStyles = {
-    textAlign: 'center',
-    marginBottom: tokens.spacing['3xl'],
-  };
-
-  const iconContainerStyles = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '72px',
-    height: '72px',
-    borderRadius: tokens.borderRadius.full,
-    backgroundColor: tokens.colors.infosys.tint, // #F0F8FC - subtle Infosys Blue tint
-    border: `2px solid ${tokens.colors.infosys.primary}`,
-    marginBottom: tokens.spacing.lg,
-  };
-
-  const titleStyles = {
-    fontFamily: tokens.typography.fontFamily.heading,
-    fontSize: tokens.typography.fontSize['3xl'],
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.sm,
-  };
-
-  const subtitleStyles = {
-    fontSize: tokens.typography.fontSize.base,
-    color: tokens.colors.text.secondary, // Asphalt gray
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: tokens.spacing.xs,
-  };
-
-  const formStyles = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.spacing.lg,
-  };
-
-  const labelStyles = {
-    fontSize: tokens.typography.fontSize.sm,
-    fontWeight: tokens.typography.fontWeight.medium,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.xs,
-    display: 'block',
-  };
-
-  const inputStyles = {
-    width: '100%',
-    padding: `${tokens.spacing.md} ${tokens.spacing.lg}`,
-    backgroundColor: tokens.colors.background.base, // #FAFAF9
-    border: `1px solid ${tokens.colors.neutral.border}`, // #E5E7EB
-    borderRadius: tokens.borderRadius.md,
-    fontSize: tokens.typography.fontSize.base,
-    color: tokens.colors.text.primary,
-    outline: 'none',
-    transition: 'border-color 0.15s, box-shadow 0.15s',
-    fontFamily: tokens.typography.fontFamily.sans,
-  };
-
-  const inputFocusStyles = {
-    borderColor: tokens.colors.infosys.primary, // #007CC3
-    boxShadow: `0 0 0 3px ${tokens.colors.infosys.light}`, // #E5F3F9
-  };
-
-  const buttonStyles = {
-    width: '100%',
-    padding: `${tokens.spacing.md} ${tokens.spacing.xl}`,
-    backgroundColor: tokens.colors.infosys.primary, // #007CC3 - Infosys Blue
-    color: '#FFFFFF',
-    border: 'none',
-    borderRadius: tokens.borderRadius.md,
-    fontSize: tokens.typography.fontSize.base,
-    fontWeight: tokens.typography.fontWeight.semibold,
-    cursor: loading ? 'not-allowed' : 'pointer',
-    opacity: loading ? 0.6 : 1,
-    transition: 'background-color 0.15s, opacity 0.15s',
-    fontFamily: tokens.typography.fontFamily.heading,
-  };
-
-  const errorStyles = {
-    padding: tokens.spacing.md,
-    backgroundColor: '#FEE2E2', // Light red background
-    border: `1px solid ${tokens.colors.alert.critical}`,
-    borderRadius: tokens.borderRadius.md,
-    color: tokens.colors.alert.critical,
-    fontSize: tokens.typography.fontSize.sm,
-    textAlign: 'center',
-    marginBottom: tokens.spacing.lg,
-  };
-
-  const brandingStyles = {
-    marginTop: tokens.spacing.xl,
-    paddingTop: tokens.spacing.lg,
-    borderTop: `1px solid ${tokens.colors.neutral.border}`,
-    textAlign: 'center',
-    fontSize: tokens.typography.fontSize.xs,
-    color: tokens.colors.text.tertiary,
-  };
-
   return (
-    <div style={containerStyles}>
-      <div style={cardStyles}>
-        <div style={headerStyles}>
-          <div style={iconContainerStyles}>
-            <Lock size={36} color={tokens.colors.infosys.primary} strokeWidth={2} />
-          </div>
-          <h1 style={titleStyles}>RoadWatch</h1>
-          <p style={subtitleStyles}>
-            <MapPin size={16} />
-            Gaborone Road Monitoring
-          </p>
-        </div>
+    <div className="gb-console relative flex min-h-screen w-full flex-col items-center justify-center gap-6 overflow-hidden bg-gb-background p-6 md:p-10">
+      {/* Ambient background — the Nemopoint mark, oversized and near-invisible,
+          held static behind the card rather than sitting as a UI element. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.07]">
+        <NemopointMark size={4500} static className="shrink-0" />
+      </div>
 
-        {error && (
-          <div style={errorStyles}>
-            {error}
-          </div>
-        )}
+      <div className="relative z-10 w-full max-w-sm md:max-w-4xl">
+        <Card className="overflow-hidden p-0">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <form ref={formRef} onSubmit={handleSubmit} className="p-6 md:p-8">
+              <FieldGroup>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <h1 className="text-2xl font-bold text-gb-foreground">Welcome back</h1>
+                  <p className="text-balance text-gb-muted-foreground">
+                    Login to your RoadWatch account
+                  </p>
+                </div>
 
-        <form onSubmit={handleSubmit} style={formStyles}>
-          <div>
-            <label htmlFor="username" style={labelStyles}>
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              disabled={loading}
-              style={inputStyles}
-              onFocus={(e) => {
-                Object.assign(e.target.style, inputFocusStyles);
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = tokens.colors.neutral.border;
-                e.target.style.boxShadow = 'none';
-              }}
-              placeholder="Enter username"
-            />
-          </div>
+                {error && (
+                  <div className="rounded-[6px] border border-gb-destructive/40 bg-gb-destructive/10 px-3 py-2.5 text-center text-[13px] text-gb-destructive">
+                    {error}
+                  </div>
+                )}
 
-          <div>
-            <label htmlFor="password" style={labelStyles}>
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              style={inputStyles}
-              onFocus={(e) => {
-                Object.assign(e.target.style, inputFocusStyles);
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = tokens.colors.neutral.border;
-                e.target.style.boxShadow = 'none';
-              }}
-              placeholder="Enter password"
-            />
-          </div>
+                <Field>
+                  <FieldLabel htmlFor="username">Username</FieldLabel>
+                  <Input
+                    id="username"
+                    type="text"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    disabled={loading}
+                    placeholder="Enter username"
+                  />
+                </Field>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={buttonStyles}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = tokens.colors.infosys.dark; // #005A8F
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = tokens.colors.infosys.primary;
-              }
-            }}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+                <Field>
+                  <div className="flex items-center">
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <a
+                      href="#"
+                      onClick={(e) => e.preventDefault()}
+                      className="ml-auto text-sm text-gb-muted-foreground underline-offset-2 hover:text-gb-foreground hover:underline"
+                    >
+                      Forgot your password?
+                    </a>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    placeholder="Enter password"
+                  />
+                </Field>
 
-        <div style={brandingStyles}>
-          Infosys InStep Internship Project
-        </div>
+                <Field>
+                  {/* Originkit "Light Glass Button" — wired in as returned; only the
+                      fill/text colors are tweaked to the console's Infosys blue, the
+                      cursor-tracking glass sheen and light-sweep animation are untouched. */}
+                  <div
+                    onClick={() => !loading && formRef.current?.requestSubmit()}
+                    style={{
+                      opacity: loading ? 0.6 : 1,
+                      pointerEvents: loading ? 'none' : 'auto',
+                      width: '100%',
+                    }}
+                  >
+                    <LiquidGlassButton
+                      label={loading ? 'Signing in…' : 'Login'}
+                      colors={{ fill: '#007CC3', textColor: '#F1F6F8' }}
+                      font={{ fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 600, fontSize: 14 }}
+                      padding="10px 16px"
+                      rounded={30}
+                      stroke={{
+                        type: 'gradient',
+                        angle: 180,
+                        width: 1.5,
+                        colorA: 'rgba(255, 255, 255, 0.55)',
+                        colorB: 'rgba(255, 255, 255, 0.2)',
+                      }}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </Field>
+
+                <FieldDescription className="text-center">
+                  Infosys InStep Internship Project
+                </FieldDescription>
+              </FieldGroup>
+            </form>
+
+            <div className="relative hidden bg-gb-background-2 md:block">
+              <BayerGlobe className="absolute inset-0" colorB="#007CC3" accent="#F1F6F8" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

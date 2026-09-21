@@ -353,6 +353,7 @@ def process_sahi_mode(frame, config: CameraConfig, state: CameraState):
 
     annotated = frame.copy()
     vehicle_count = 0
+    h, w = frame.shape[:2]
 
     for pred in result.object_prediction_list:
         category_name = pred.category.name
@@ -368,6 +369,19 @@ def process_sahi_mode(frame, config: CameraConfig, state: CameraState):
         x2 = int(box[2]) + offset_x
         y2 = int(box[3]) + offset_y
         draw_corner_box(annotated, (x1, y1, x2, y2), category_name, pred.score.value)
+
+        # Add heatmap point (normalized coordinates)
+        with state.heatmap_lock:
+            cx = (x1 + x2) / 2 / w
+            cy = (y1 + y2) / 2 / h
+            bw = (x2 - x1) / w
+            bh = (y2 - y1) / h
+            state.heatmap_points.append({
+                "x": float(cx),
+                "y": float(cy),
+                "w": float(bw),
+                "h": float(bh)
+            })
 
     # Draw ROI outline
     cv2.polylines(annotated, [roi_polygon], True, (0, 255, 255), 2)
@@ -458,21 +472,29 @@ def camera_worker(camera_id: str):
             # Snapshot history every 10s for analytics charts
             if now - state.last_snapshot_time >= 10:
                 state.last_snapshot_time = now
-                with state.counts_lock:
-                    snapshot = dict(state.counts)
 
-                # Calculate flow rate for this snapshot (PART 3)
-                flow_rate = 0
-                if len(state.history) >= 1:
-                    with state.history_lock:
-                        if len(state.history) > 0:
-                            prev_snapshot = state.history[-1]
-                            for cls in ['car', 'bus', 'truck']:
-                                if cls in snapshot and cls in prev_snapshot:
-                                    delta = snapshot[cls] - prev_snapshot[cls]
-                                    flow_rate += max(0, delta)
+                # Get snapshot based on camera mode
+                if config.detection_mode == "tracking":
+                    # Traffic camera - use counts and calculate flow rate
+                    with state.counts_lock:
+                        snapshot = dict(state.counts)
 
-                snapshot['flow_rate'] = flow_rate * 6  # Scale to per-minute (10s intervals)
+                    # Calculate flow rate for this snapshot (PART 3)
+                    flow_rate = 0
+                    if len(state.history) >= 1:
+                        with state.history_lock:
+                            if len(state.history) > 0:
+                                prev_snapshot = state.history[-1]
+                                for cls in ['car', 'bus', 'truck']:
+                                    if cls in snapshot and cls in prev_snapshot:
+                                        delta = snapshot[cls] - prev_snapshot[cls]
+                                        flow_rate += max(0, delta)
+
+                    snapshot['flow_rate'] = flow_rate * 6  # Scale to per-minute (10s intervals)
+                else:
+                    # Parking camera - use parking stats
+                    with state.parking_stats_lock:
+                        snapshot = dict(state.parking_stats)
 
                 with state.history_lock:
                     state.history.append({

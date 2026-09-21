@@ -1,7 +1,6 @@
 import { MapContainer, TileLayer, GeoJSON, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import { CameraMarker } from './CameraMarker';
-import { ParkingMarker } from './ParkingMarker';
 import { MapLegend } from './MapLegend';
 import { useCameraList } from '../../hooks/useGenericCameraData';
 import { tokens } from '../../styles/tokens';
@@ -17,9 +16,8 @@ import { useTranslation } from '../../i18n/LanguageContext';
  * @param {Object} props.points - GeoJSON points data
  * @param {Object} props.crashes - GeoJSON crash data
  * @param {Array<number>} props.cameraPosition - Camera marker position [lat, lng]
- * @param {Array<number>} props.parkingPosition - Parking marker position [lat, lng] (optional)
- * @param {Function} props.onParkingClick - Callback when parking marker is clicked (optional)
  * @param {boolean} props.showLegend - Whether to show legend (default: true)
+ * @param {boolean} props.zoomControl - Whether to render Leaflet's own zoom control (default: false; the console renders its own GIS-style control cluster instead)
  */
 export function MapView({
   center = [-24.6539, 25.9010],
@@ -28,50 +26,44 @@ export function MapView({
   points,
   crashes,
   cameraPosition = [-24.6539, 25.9010],  // DEPRECATED: Use cameras list instead
-  parkingPosition,                        // DEPRECATED: Use cameras list instead
-  onParkingClick,                         // DEPRECATED: Direct navigation now
-  showLegend = true
+  showLegend = true,
+  zoomControl = false,
 }) {
   const { t } = useTranslation();
 
-  // PART 2: Fetch dynamic camera list from backend
-  const cameras = useCameraList(10000); // Poll every 10 seconds
+  // Live camera registry from the backend (position, online state, live counts)
+  const cameras = useCameraList(10000);
 
-  // Debug: Log camera data
-  console.log('[MapView] Cameras from backend:', cameras);
-  // Crash point styling - IMPROVED with glow effect
   const crashPointStyle = (feature) => {
     const severity = feature.properties.severity;
     let color = tokens.colors.severity.minor;
     if (severity === 'fatal') color = tokens.colors.severity.fatal;
     else if (severity === 'serious_injury') color = tokens.colors.severity.serious;
     return {
-      radius: 8,
+      radius: 6,
       fillColor: color,
-      color: '#ffffff',
-      weight: 2,
-      fillOpacity: 0.85,
-      className: 'crash-marker' // Pour les animations CSS
+      color: 'rgba(11,15,18,0.6)',
+      weight: 1.5,
+      fillOpacity: 0.9,
+      className: 'crash-marker',
     };
   };
 
-  // Road styling - Infosys Blue
   const roadStyle = {
     color: tokens.colors.infosys.primary, // #007CC3
-    weight: 4,
-    opacity: 0.7,
+    weight: 2.5,
+    opacity: 0.55,
     lineCap: 'round',
-    lineJoin: 'round'
+    lineJoin: 'round',
   };
 
-  // Point styling (signals/crossings)
   const pointStyle = {
-    radius: 5,
-    fillColor: tokens.colors.infosys.primary, // #007CC3
-    color: '#ffffff',
-    weight: 2,
-    fillOpacity: 0.8,
-    className: 'signal-point'
+    radius: 3.5,
+    fillColor: tokens.colors.infosys.primary,
+    color: 'rgba(11,15,18,0.6)',
+    weight: 1,
+    fillOpacity: 0.85,
+    className: 'signal-point',
   };
 
   return (
@@ -79,15 +71,9 @@ export function MapView({
       <MapContainer
         center={center}
         zoom={zoom}
-        style={{
-          height: '100%',
-          width: '100%',
-          borderRadius: tokens.borderRadius.lg,
-          boxShadow: tokens.shadows.lg
-        }}
-        zoomControl={false} // On va repositionner les contrôles
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
       >
-        {/* Style de carte configuré dans utils/mapStyles.js */}
         <TileLayer
           url={DEFAULT_MAP_STYLE.url}
           attribution={DEFAULT_MAP_STYLE.attribution}
@@ -95,26 +81,19 @@ export function MapView({
           maxZoom={DEFAULT_MAP_STYLE.maxZoom}
         />
 
-        {/* Road network */}
         {roads && <GeoJSON data={roads} style={roadStyle} />}
 
-        {/* Traffic signals / crossings */}
         {points && (
           <GeoJSON
             data={points}
-            pointToLayer={(feature, latlng) =>
-              L.circleMarker(latlng, pointStyle)
-            }
+            pointToLayer={(feature, latlng) => L.circleMarker(latlng, pointStyle)}
           />
         )}
 
-        {/* Crash history */}
         {crashes && (
           <GeoJSON
             data={crashes}
-            pointToLayer={(feature, latlng) =>
-              L.circleMarker(latlng, crashPointStyle(feature))
-            }
+            pointToLayer={(feature, latlng) => L.circleMarker(latlng, crashPointStyle(feature))}
             onEachFeature={(feature, layer) => {
               const p = feature.properties;
               layer.bindPopup(
@@ -127,9 +106,7 @@ export function MapView({
           />
         )}
 
-        {/* Camera markers - PART 2: Deep-link navigation with fallback */}
         {cameras.length > 0 ? (
-          // Dynamic markers from backend camera registry
           cameras.map((camera) => (
             <CameraMarker
               key={camera.id}
@@ -137,118 +114,37 @@ export function MapView({
               cameraId={camera.id}
               cameraName={camera.name}
               cameraType={camera.type}
+              isOnline={camera.is_online}
             />
           ))
         ) : (
-          // Fallback to hardcoded positions if cameras list is empty/loading
-          <>
-            <CameraMarker
-              position={cameraPosition}
-              cameraId="traffic_main_gaborone"
-              cameraName="Traffic Camera"
-              cameraType="traffic"
-            />
-            {parkingPosition && (
-              <CameraMarker
-                position={parkingPosition}
-                cameraId="parking_gaborone_lot1"
-                cameraName="Parking Lot"
-                cameraType="parking"
-              />
-            )}
-          </>
+          <CameraMarker
+            position={cameraPosition}
+            cameraId="traffic_main_gaborone"
+            cameraName="Traffic Camera"
+            cameraType="traffic"
+            isOnline
+          />
         )}
 
-        {/* Zoom controls repositionnés en bas à droite */}
-        <ZoomControl position="bottomright" />
+        {zoomControl && <ZoomControl position="bottomright" />}
       </MapContainer>
 
-      {/* Legend overlay */}
       {showLegend && <MapLegend />}
 
-      {/* Styles CSS pour animations */}
       <style>{`
-        /* Animation pulse pour les marqueurs d'accidents */
         @keyframes pulse-marker {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.85;
-          }
-          50% {
-            transform: scale(1.1);
-            opacity: 1;
-          }
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.15); opacity: 1; }
         }
-
         .crash-marker {
-          animation: pulse-marker 2s ease-in-out infinite;
-          filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+          animation: pulse-marker 2.2s ease-in-out infinite;
         }
-
         .signal-point {
-          filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.4));
-          transition: all 0.3s ease;
+          transition: transform 0.2s ease;
         }
-
         .signal-point:hover {
-          transform: scale(1.3);
-        }
-
-        /* Style des popups */
-        .leaflet-popup-content-wrapper {
-          border-radius: ${tokens.borderRadius.lg};
-          box-shadow: ${tokens.shadows.xl};
-          border: none;
-          padding: 0;
-        }
-
-        .leaflet-popup-content {
-          margin: ${tokens.spacing.lg};
-          font-family: ${tokens.typography.fontFamily.sans};
-          font-size: ${tokens.typography.fontSize.sm};
-          line-height: ${tokens.typography.lineHeight.normal};
-        }
-
-        .leaflet-popup-content b {
-          color: ${tokens.colors.infosys.dark}; // #005A8F
-          font-weight: ${tokens.typography.fontWeight.semibold};
-        }
-
-        /* Style des contrôles de zoom - Light theme */
-        .leaflet-control-zoom {
-          border: none !important;
-          box-shadow: ${tokens.shadows.md};
-        }
-
-        .leaflet-control-zoom a {
-          background-color: ${tokens.colors.background.elevated} !important; // White
-          color: ${tokens.colors.text.primary} !important; // #1A1A1A
-          border: 1px solid ${tokens.colors.neutral.border} !important; // #E5E7EB
-          border-radius: ${tokens.borderRadius.sm} !important;
-          width: 36px !important;
-          height: 36px !important;
-          line-height: 36px !important;
-          font-size: 20px !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .leaflet-control-zoom a:hover {
-          background-color: ${tokens.colors.background.hover} !important; // #E5F3F9
-          color: ${tokens.colors.infosys.primary} !important; // #007CC3
-          border-color: ${tokens.colors.infosys.primary} !important; // #007CC3
-        }
-
-        .leaflet-control-zoom a:first-child {
-          margin-bottom: 4px;
-        }
-
-        /* Attribution plus discrète */
-        .leaflet-control-attribution {
-          background-color: rgba(255, 255, 255, 0.9) !important;
-          padding: 4px 8px !important;
-          font-size: 10px !important;
-          border-radius: ${tokens.borderRadius.sm};
-          box-shadow: ${tokens.shadows.sm};
+          transform: scale(1.25);
         }
       `}</style>
     </div>

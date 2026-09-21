@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { AppLayout } from './layouts/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { LiveMapPage } from './pages/LiveMapPage';
@@ -13,96 +12,79 @@ import { GraphPage3D } from './pages/GraphPage3D';
 import { StatisticsPage } from './pages/StatisticsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
+/**
+ * Every page now renders its own <ConsoleLayout> (icon rail + top status
+ * bar), so routes just point at the page — no shared AppLayout wrapper.
+ * This is what makes the whole app read as one dark command console
+ * instead of a light CRUD app with one dark surface bolted on.
+ */
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public route */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected routes - wrapped in AppLayout */}
           <Route path="/" element={
             <ProtectedRoute>
-              <AppLayout>
-                <Navigate to="/dashboard" replace />
-              </AppLayout>
+              <Navigate to="/dashboard" replace />
             </ProtectedRoute>
           } />
 
-          {/* Viewer, Operator, Admin: Dashboard, Map, Stats */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
+              <Dashboard />
             </ProtectedRoute>
           } />
 
           <Route path="/map" element={
             <ProtectedRoute>
-              <AppLayout>
-                <LiveMapPage />
-              </AppLayout>
+              <LiveMapPage />
             </ProtectedRoute>
           } />
 
           <Route path="/stats" element={
             <ProtectedRoute>
-              <AppLayout>
-                <StatisticsPage />
-              </AppLayout>
+              <StatisticsPage />
             </ProtectedRoute>
           } />
 
           {/* Operator, Admin only: Camera Wall (multi-camera grid view) */}
           <Route path="/camera-wall" element={
             <ProtectedRoute allowedRoles={['operator', 'admin']}>
-              <AppLayout>
-                <CameraWallPage />
-              </AppLayout>
+              <CameraWallPage />
             </ProtectedRoute>
           } />
 
-          {/* Operator, Admin only: Live camera analytics (now supports dynamic camera IDs) */}
+          {/* Operator, Admin only: Live camera analytics (dynamic camera IDs) */}
           <Route path="/camera/:cameraId?" element={
             <ProtectedRoute allowedRoles={['operator', 'admin']}>
-              <AppLayout>
-                <LiveCameraPage />
-              </AppLayout>
+              <LiveCameraPage />
             </ProtectedRoute>
           } />
 
           <Route path="/graph" element={
             <ProtectedRoute allowedRoles={['operator', 'admin']}>
-              <AppLayout>
-                <GraphPage />
-              </AppLayout>
+              <GraphPage />
             </ProtectedRoute>
           } />
 
           <Route path="/graph3d" element={
             <ProtectedRoute allowedRoles={['operator', 'admin']}>
-              <AppLayout>
-                <GraphPage3D />
-              </AppLayout>
+              <GraphPage3D />
             </ProtectedRoute>
           } />
 
           <Route path="/incidents" element={
             <ProtectedRoute allowedRoles={['operator', 'admin']}>
-              <AppLayout>
-                <IncidentsPage />
-              </AppLayout>
+              <IncidentsPage />
             </ProtectedRoute>
           } />
 
           {/* Admin only: Settings with user management */}
           <Route path="/settings" element={
             <ProtectedRoute allowedRoles={['admin']}>
-              <AppLayout>
-                <SettingsPage />
-              </AppLayout>
+              <SettingsPage />
             </ProtectedRoute>
           } />
         </Routes>

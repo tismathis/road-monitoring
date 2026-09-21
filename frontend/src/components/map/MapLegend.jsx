@@ -1,73 +1,35 @@
-import { tokens } from '../../styles/tokens';
 import { useTranslation } from '../../i18n/LanguageContext';
 
 /**
- * MapLegend component - displays crash severity legend
- * Apple-style frosted glass for dark mode
+ * MapLegend — crash severity legend for the command console map.
+ * Solid panel, hairline border, no blur/glass — matches the console's
+ * restrained-GIS-software guardrails.
  */
 export function MapLegend() {
   const { t } = useTranslation();
-  const legendStyles = {
-    position: 'absolute',
-    bottom: '30px',
-    right: '10px',
-    zIndex: 1000,
-    background: 'rgba(26, 26, 31, 0.9)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    padding: tokens.spacing.lg,
-    borderRadius: tokens.borderRadius.lg,
-    boxShadow: tokens.shadows.xl,
-    fontSize: tokens.typography.fontSize.sm,
-    border: `1px solid ${tokens.colors.neutral.border}`,
-    minWidth: '180px',
-  };
 
-  const titleStyles = {
-    fontWeight: tokens.typography.fontWeight.semibold,
-    marginBottom: tokens.spacing.sm,
-    color: tokens.colors.text.primary,
-  };
-
-  const itemStyles = {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '4px',
-  };
-
-  const dotStyles = (color) => ({
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    backgroundColor: color,
-    display: 'inline-block',
-    marginRight: tokens.spacing.sm,
-    border: '2px solid rgba(0, 0, 0, 0.3)',
-    boxShadow: `0 0 8px ${color}40`,
-  });
-
-  const labelStyles = {
-    color: tokens.colors.text.secondary,
-  };
+  const items = [
+    { key: 'fatal', color: 'var(--gb-destructive)' },
+    { key: 'serious', color: 'var(--gb-warning)' },
+    { key: 'minor', color: '#F2C94C' },
+    { key: 'signal', color: 'var(--gb-primary)' },
+  ];
 
   return (
-    <div style={legendStyles}>
-      <div style={titleStyles}>{t('map.legend')}</div>
-      <div style={itemStyles}>
-        <span style={dotStyles(tokens.colors.severity.fatal)}></span>
-        <span style={labelStyles}>{t('map.fatal')}</span>
+    <div className="absolute bottom-4 right-4 z-[1000] w-[168px] rounded-md border border-gb-border bg-gb-card/95 p-3">
+      <div className="mb-2 text-[10px] font-semibold tracking-wide text-gb-muted-foreground">
+        {t('map.legend')}
       </div>
-      <div style={itemStyles}>
-        <span style={dotStyles(tokens.colors.severity.serious)}></span>
-        <span style={labelStyles}>{t('map.serious')}</span>
-      </div>
-      <div style={itemStyles}>
-        <span style={dotStyles(tokens.colors.severity.minor)}></span>
-        <span style={labelStyles}>{t('map.minor')}</span>
-      </div>
-      <div style={itemStyles}>
-        <span style={dotStyles(tokens.colors.text.tertiary)}></span>
-        <span style={labelStyles}>{t('map.signal')}</span>
+      <div className="flex flex-col gap-1.5">
+        {items.map((item) => (
+          <div key={item.key} className="flex items-center gap-2">
+            <span
+              className="inline-block size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-[11px] text-gb-foreground/90">{t(`map.${item.key}`)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

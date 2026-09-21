@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import { mockGraphNodes, mockGraphLinks } from '../utils/mockData';
-import { tokens } from '../styles/tokens';
 import { Network, AlertTriangle, RotateCcw, Play, Pause } from 'lucide-react';
-import { useTranslation } from '../i18n/LanguageContext';
 
-/**
- * GraphPage3D - 3D Neural Network Visualization of City Road System
- * Inspired by neuron systems - each node represents a road, connections turn red when crashes detected
- */
+import { ConsoleLayout } from '../layouts/ConsoleLayout';
+import { mockGraphNodes, mockGraphLinks } from '../utils/mockData';
+import { useTranslation } from '../i18n/LanguageContext';
+import { Button } from '../components/console-ui/button';
+import { Badge } from '../components/console-ui/badge';
+import { DetailRow, SectionHeader } from '../components/console-ui/panel';
+
+const NODE_NORMAL = '#007CC3';
+const NODE_ALERT = '#E5484D';
+const LINK_NORMAL = '#5A6B75';
+
 export function GraphPage3D() {
   const { t } = useTranslation();
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
@@ -20,68 +21,60 @@ export function GraphPage3D() {
   const [autoRotate, setAutoRotate] = useState(true);
   const [simulationRunning, setSimulationRunning] = useState(true);
   const graphRef = useRef();
+  const containerRef = useRef(null);
+  const [dims, setDims] = useState({ w: 1200, h: 700 });
 
-  // Initialize graph data with 3D positioning
   useEffect(() => {
-    const nodes = mockGraphNodes.map(node => ({
+    const nodes = mockGraphNodes.map((node) => ({
       ...node,
-      // Random 3D positioning for organic neuron-like spread
       fx: Math.random() * 400 - 200,
       fy: Math.random() * 400 - 200,
       fz: Math.random() * 400 - 200,
     }));
-
-    setGraphData({
-      nodes,
-      links: mockGraphLinks.map(link => ({ ...link })),
-    });
+    setGraphData({ nodes, links: mockGraphLinks.map((link) => ({ ...link })) });
   }, []);
 
-  // Auto-rotate camera
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setDims({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!autoRotate || !graphRef.current) return;
-
     const interval = setInterval(() => {
       const camera = graphRef.current.camera();
-      const distance = Math.sqrt(
-        camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2
-      );
-
+      const distance = Math.sqrt(camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2);
       const angle = Date.now() * 0.0001;
       camera.position.x = distance * Math.sin(angle);
       camera.position.z = distance * Math.cos(angle);
       camera.lookAt(0, 0, 0);
     }, 16);
-
     return () => clearInterval(interval);
   }, [autoRotate]);
 
-  // Simulate crash alerts (toggle every 5 seconds)
   useEffect(() => {
     if (!simulationRunning) return;
-
     const interval = setInterval(() => {
-      setGraphData(prevData => ({
-        ...prevData,
-        nodes: prevData.nodes.map(node => ({
+      setGraphData((prev) => ({
+        ...prev,
+        nodes: prev.nodes.map((node) => ({
           ...node,
           hasAlert: Math.random() < 0.15 ? !node.hasAlert : node.hasAlert,
         })),
       }));
     }, 5000);
-
     return () => clearInterval(interval);
   }, [simulationRunning]);
 
-  // Node 3D object - glowing spheres like neurons
   const createNodeObject = useCallback((node) => {
     const isAlert = node.hasAlert;
-    const color = isAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary;
+    const color = isAlert ? NODE_ALERT : NODE_NORMAL;
 
-    // Create a group for the node
     const group = new THREE.Group();
 
-    // Main sphere (neuron body)
     const geometry = new THREE.SphereGeometry(isAlert ? 8 : 5, 32, 32);
     const material = new THREE.MeshPhongMaterial({
       color,
@@ -91,10 +84,8 @@ export function GraphPage3D() {
       transparent: true,
       opacity: 0.9,
     });
-    const sphere = new THREE.Mesh(geometry, material);
-    group.add(sphere);
+    group.add(new THREE.Mesh(geometry, material));
 
-    // Glow effect (outer sphere)
     const glowGeometry = new THREE.SphereGeometry(isAlert ? 12 : 8, 32, 32);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color,
@@ -105,7 +96,6 @@ export function GraphPage3D() {
     const glow = new THREE.Mesh(glowGeometry, glowMaterial);
     group.add(glow);
 
-    // Pulsing animation for alerts
     if (isAlert) {
       const time = Date.now() * 0.001;
       const scale = 1 + Math.sin(time * 3) * 0.1;
@@ -115,309 +105,153 @@ export function GraphPage3D() {
     return group;
   }, []);
 
-  // Handle node click
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(node);
     if (graphRef.current) {
-      // Zoom to node
       const distance = 200;
-      graphRef.current.cameraPosition(
-        { x: node.x, y: node.y, z: node.z + distance },
-        { x: node.x, y: node.y, z: node.z },
-        1000
-      );
+      graphRef.current.cameraPosition({ x: node.x, y: node.y, z: node.z + distance }, { x: node.x, y: node.y, z: node.z }, 1000);
     }
   }, []);
 
-  // Reset camera view
   const resetView = () => {
     if (graphRef.current) {
-      graphRef.current.cameraPosition(
-        { x: 0, y: 0, z: 400 },
-        { x: 0, y: 0, z: 0 },
-        1500
-      );
+      graphRef.current.cameraPosition({ x: 0, y: 0, z: 400 }, { x: 0, y: 0, z: 0 }, 1500);
     }
     setSelectedNode(null);
   };
 
-  // Toggle node alert
   const toggleNodeAlert = (nodeId) => {
-    setGraphData(prevData => ({
-      ...prevData,
-      nodes: prevData.nodes.map(node =>
-        node.id === nodeId ? { ...node, hasAlert: !node.hasAlert } : node
-      ),
+    setGraphData((prev) => ({
+      ...prev,
+      nodes: prev.nodes.map((node) => (node.id === nodeId ? { ...node, hasAlert: !node.hasAlert } : node)),
     }));
   };
 
-  // Count alerts
-  const alertCount = graphData.nodes.filter(n => n.hasAlert).length;
+  const alertCount = graphData.nodes.filter((n) => n.hasAlert).length;
 
-  const containerStyles = {
-    maxWidth: tokens.layout.maxContentWidth,
-    margin: '0 auto',
+  const linkColor = (link) => {
+    const s = graphData.nodes.find((n) => n.id === (link.source.id || link.source));
+    const tg = graphData.nodes.find((n) => n.id === (link.target.id || link.target));
+    return s?.hasAlert || tg?.hasAlert ? NODE_ALERT : LINK_NORMAL;
   };
-
-  const headingStyles = {
-    fontSize: tokens.typography.fontSize['3xl'],
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.xl,
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacing.md,
-  };
-
-  const controlsGridStyles = {
-    display: 'grid',
-    gridTemplateColumns: '1fr auto auto auto',
-    gap: tokens.spacing.md,
-    marginBottom: tokens.spacing.xl,
-  };
-
-  const statsStyles = {
-    display: 'flex',
-    gap: tokens.spacing.md,
-    alignItems: 'center',
-    padding: tokens.spacing.lg,
-    background: 'rgba(31, 31, 36, 0.6)',
-    borderRadius: tokens.borderRadius.md,
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.secondary,
-    border: `1px solid ${tokens.colors.neutral.border}`,
-  };
-
-  const graphContainerStyles = {
-    position: 'relative',
-    height: '700px',
-    borderRadius: tokens.borderRadius.xl,
-    overflow: 'hidden',
-    background: '#000000',
-    border: `1px solid ${tokens.colors.neutral.border}`,
+  const linkAlert = (link) => {
+    const s = graphData.nodes.find((n) => n.id === (link.source.id || link.source));
+    const tg = graphData.nodes.find((n) => n.id === (link.target.id || link.target));
+    return !!(s?.hasAlert || tg?.hasAlert);
   };
 
   return (
-    <div style={containerStyles}>
-      <h1 style={headingStyles}>
-        <Network size={32} />
-        {t('graph.neural3d')}
-      </h1>
-
-      {/* Controls */}
-      <div style={controlsGridStyles}>
-        <div style={statsStyles}>
-          <AlertTriangle size={20} color={tokens.colors.severity.fatal} />
-          <strong style={{ color: tokens.colors.text.primary }}>{alertCount}</strong>
-          <span>{alertCount === 1 ? t('graph.alert') : t('graph.alerts')}</span>
-          <span>•</span>
-          <strong style={{ color: tokens.colors.text.primary }}>{graphData.nodes.length}</strong>
-          <span>{t('graph.roads')}</span>
-          <span>•</span>
-          <strong style={{ color: tokens.colors.text.primary }}>{graphData.links.length}</strong>
-          <span>{t('graph.connections')}</span>
+    <ConsoleLayout title={t('graph.neural3d')}>
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-1 items-center gap-2 rounded-[8px] border border-gb-border bg-gb-card px-4 py-3 text-[12.5px] text-gb-muted-foreground">
+            <AlertTriangle size={16} className="text-gb-destructive" />
+            <span className="gb-num font-semibold text-gb-foreground">{alertCount}</span>
+            <span>{alertCount === 1 ? t('graph.alert') : t('graph.alerts')}</span>
+            <span className="text-gb-border">•</span>
+            <span className="gb-num font-semibold text-gb-foreground">{graphData.nodes.length}</span>
+            <span>{t('graph.roads')}</span>
+            <span className="text-gb-border">•</span>
+            <span className="gb-num font-semibold text-gb-foreground">{graphData.links.length}</span>
+            <span>{t('graph.connections')}</span>
+          </div>
+          <Button variant={autoRotate ? 'default' : 'outline'} size="sm" onClick={() => setAutoRotate(!autoRotate)}>
+            {autoRotate ? <Pause size={14} /> : <Play size={14} />}
+            {autoRotate ? 'Pause' : 'Rotation'}
+          </Button>
+          <Button variant={simulationRunning ? 'destructive' : 'outline'} size="sm" onClick={() => setSimulationRunning(!simulationRunning)}>
+            {simulationRunning ? t('graph.stopSimulation') : t('graph.startSimulation')}
+          </Button>
+          <Button variant="outline" size="sm" onClick={resetView}>
+            <RotateCcw size={14} />
+            {t('graph.reset')}
+          </Button>
         </div>
 
-        <Button
-          variant={autoRotate ? 'primary' : 'secondary'}
-          icon={autoRotate ? Pause : Play}
-          onClick={() => setAutoRotate(!autoRotate)}
-          size="sm"
-        >
-          {autoRotate ? 'Pause' : 'Rotation'}
-        </Button>
-
-        <Button
-          variant={simulationRunning ? 'danger' : 'secondary'}
-          onClick={() => setSimulationRunning(!simulationRunning)}
-          size="sm"
-        >
-          {simulationRunning ? t('graph.stopSimulation') : t('graph.startSimulation')}
-        </Button>
-
-        <Button
-          variant="ghost"
-          icon={RotateCcw}
-          onClick={resetView}
-          size="sm"
-        >
-          {t('graph.reset')}
-        </Button>
-      </div>
-
-      {/* 3D Neural Network Graph */}
-      <Card padding="none">
-        <div style={graphContainerStyles}>
+        <div ref={containerRef} className="relative h-[700px] overflow-hidden rounded-[8px] border border-gb-border bg-black">
           <ForceGraph3D
             ref={graphRef}
             graphData={graphData}
-            nodeLabel={node => `${node.name}`}
+            nodeLabel={(node) => `${node.name}`}
             nodeThreeObject={createNodeObject}
-            nodeThreeObjectExtend={true}
-            linkColor={link => {
-              const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
-              const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
-              const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? tokens.colors.severity.fatal : tokens.colors.text.tertiary;
-            }}
-            linkWidth={link => {
-              const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
-              const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
-              const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? 2 : 0.5;
-            }}
+            nodeThreeObjectExtend
+            linkColor={linkColor}
+            linkWidth={(link) => (linkAlert(link) ? 2 : 0.5)}
             linkOpacity={0.6}
-            linkDirectionalParticles={link => {
-              const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
-              const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
-              const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? 4 : 1;
-            }}
-            linkDirectionalParticleWidth={link => {
-              const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
-              const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
-              const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? 3 : 1;
-            }}
+            linkDirectionalParticles={(link) => (linkAlert(link) ? 4 : 1)}
+            linkDirectionalParticleWidth={(link) => (linkAlert(link) ? 3 : 1)}
             linkDirectionalParticleSpeed={0.005}
-            linkDirectionalParticleColor={link => {
-              const sourceNode = graphData.nodes.find(n => n.id === (link.source.id || link.source));
-              const targetNode = graphData.nodes.find(n => n.id === (link.target.id || link.target));
-              const hasAlert = sourceNode?.hasAlert || targetNode?.hasAlert;
-              return hasAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary;
-            }}
+            linkDirectionalParticleColor={(link) => (linkAlert(link) ? NODE_ALERT : NODE_NORMAL)}
             onNodeClick={handleNodeClick}
             enableNodeDrag={false}
             showNavInfo={false}
             backgroundColor="#000000"
-            width={1200}
-            height={700}
+            width={dims.w}
+            height={dims.h}
             d3AlphaDecay={0.01}
             d3VelocityDecay={0.2}
             warmupTicks={100}
             cooldownTicks={500}
           />
         </div>
-      </Card>
 
-      {/* Legend */}
-      <Card style={{ marginTop: tokens.spacing.xl }}>
-        <h3 style={{ color: tokens.colors.text.primary, marginBottom: tokens.spacing.lg }}>{t('map.legend')}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: tokens.spacing.md }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing.sm }}>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: tokens.colors.severity.fatal,
-              boxShadow: `0 0 10px ${tokens.colors.severity.fatal}80`
-            }} />
-            <span style={{ color: tokens.colors.text.secondary }}>{t('graph.accidentActive')}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing.sm }}>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: tokens.colors.infosys.primary,
-              boxShadow: `0 0 10px ${tokens.colors.infosys.primary}80`
-            }} />
-            <span style={{ color: tokens.colors.text.secondary }}>{t('graph.normalRoad')}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing.sm }}>
-            <div style={{
-              width: '40px',
-              height: '2px',
-              backgroundColor: tokens.colors.severity.fatal
-            }} />
-            <span style={{ color: tokens.colors.text.secondary }}>{t('graph.alertConnection')}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing.sm }}>
-            <div style={{
-              width: '40px',
-              height: '1px',
-              backgroundColor: tokens.colors.text.tertiary
-            }} />
-            <span style={{ color: tokens.colors.text.secondary }}>{t('graph.normalConnection')}</span>
+        <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+          <SectionHeader title={t('map.legend')} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
+              <span className="size-2.5 rounded-full" style={{ background: NODE_ALERT, boxShadow: `0 0 8px ${NODE_ALERT}80` }} />
+              {t('graph.accidentActive')}
+            </div>
+            <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
+              <span className="size-2.5 rounded-full" style={{ background: NODE_NORMAL, boxShadow: `0 0 8px ${NODE_NORMAL}80` }} />
+              {t('graph.normalRoad')}
+            </div>
+            <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
+              <span className="h-[2px] w-8" style={{ background: NODE_ALERT }} />
+              {t('graph.alertConnection')}
+            </div>
+            <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
+              <span className="h-px w-8" style={{ background: LINK_NORMAL }} />
+              {t('graph.normalConnection')}
+            </div>
           </div>
         </div>
-      </Card>
 
-      {/* Selected Node Info */}
-      {selectedNode && (
-        <Card style={{ marginTop: tokens.spacing.xl }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: tokens.spacing.lg }}>
-            <div>
-              <h3 style={{ color: tokens.colors.text.primary, marginBottom: tokens.spacing.sm }}>
-                {selectedNode.name}
-              </h3>
-              <Badge variant={selectedNode.hasAlert ? 'fatal' : 'online'}>
-                {selectedNode.hasAlert ? t('graph.activeAlert') : t('graph.trafficNormal')}
-              </Badge>
+        {selectedNode && (
+          <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="mb-2 text-[15px] font-semibold text-gb-foreground">{selectedNode.name}</h3>
+                <Badge variant={selectedNode.hasAlert ? 'destructive' : 'success'}>
+                  {selectedNode.hasAlert ? t('graph.activeAlert') : t('graph.trafficNormal')}
+                </Badge>
+              </div>
+              <Button
+                variant={selectedNode.hasAlert ? 'destructive' : 'default'}
+                size="sm"
+                onClick={() => toggleNodeAlert(selectedNode.id)}
+              >
+                {selectedNode.hasAlert ? t('graph.disableAlert') : t('graph.simulateAlert')}
+              </Button>
             </div>
-            <Button
-              variant={selectedNode.hasAlert ? 'danger' : 'primary'}
-              size="sm"
-              onClick={() => toggleNodeAlert(selectedNode.id)}
-            >
-              {selectedNode.hasAlert ? t('graph.disableAlert') : t('graph.simulateAlert')}
-            </Button>
+            <DetailRow label={t('graph.roadId')} value={<span className="gb-num">{selectedNode.id}</span>} />
+            <DetailRow label={t('graph.type')} value={t(`road.${selectedNode.type}`)} />
+            <DetailRow
+              label={t('graph.state')}
+              value={selectedNode.hasAlert ? t('graph.detected') : t('graph.normalTraffic')}
+              valueClassName={selectedNode.hasAlert ? 'text-gb-destructive' : 'text-gb-success'}
+            />
           </div>
+        )}
 
-          <div style={{ display: 'grid', gap: tokens.spacing.md }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: `${tokens.spacing.sm} 0`,
-              borderBottom: `1px solid ${tokens.colors.neutral.border}`
-            }}>
-              <span style={{ color: tokens.colors.text.secondary }}>{t('graph.roadId')}</span>
-              <span style={{ color: tokens.colors.text.primary, fontWeight: tokens.typography.fontWeight.medium }}>
-                {selectedNode.id}
-              </span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: `${tokens.spacing.sm} 0`,
-              borderBottom: `1px solid ${tokens.colors.neutral.border}`
-            }}>
-              <span style={{ color: tokens.colors.text.secondary }}>{t('graph.type')}</span>
-              <span style={{ color: tokens.colors.text.primary, fontWeight: tokens.typography.fontWeight.medium }}>
-                {t(`road.${selectedNode.type}`)}
-              </span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: `${tokens.spacing.sm} 0`
-            }}>
-              <span style={{ color: tokens.colors.text.secondary }}>{t('graph.state')}</span>
-              <span style={{
-                color: selectedNode.hasAlert ? tokens.colors.severity.fatal : tokens.colors.infosys.primary,
-                fontWeight: tokens.typography.fontWeight.medium
-              }}>
-                {selectedNode.hasAlert ? t('graph.detected') : t('graph.normalTraffic')}
-              </span>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Info Card */}
-      <Card style={{ marginTop: tokens.spacing.xl, background: 'rgba(16, 185, 129, 0.1)', border: `1px solid ${tokens.colors.infosys.primary}40` }}>
-        <div style={{ display: 'flex', gap: tokens.spacing.md, alignItems: 'start' }}>
-          <Network size={24} color={tokens.colors.infosys.primary} />
+        <div className="flex gap-3 rounded-[8px] border border-gb-primary/25 bg-gb-primary/8 p-5">
+          <Network size={22} className="mt-0.5 shrink-0 text-gb-primary" />
           <div>
-            <h4 style={{ color: tokens.colors.text.primary, marginBottom: tokens.spacing.sm }}>
-              {t('graph.neuralVisualization')}
-            </h4>
-            <p style={{ color: tokens.colors.text.secondary, fontSize: tokens.typography.fontSize.sm, lineHeight: tokens.typography.lineHeight.relaxed }}>
-              {t('graph.description')}
-            </p>
+            <h4 className="mb-1.5 text-[13.5px] font-semibold text-gb-foreground">{t('graph.neuralVisualization')}</h4>
+            <p className="text-[12.5px] leading-relaxed text-gb-muted-foreground">{t('graph.description')}</p>
           </div>
         </div>
-      </Card>
-    </div>
+      </div>
+    </ConsoleLayout>
   );
 }

@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { tokens } from '../../styles/tokens';
+import { UserPlus, UserCheck, UserX } from 'lucide-react';
+
 import { endpoints } from '../../utils/api';
 import { authGet, authPost, authPatch } from '../../utils/authFetch';
-import { UserPlus, Edit, UserCheck, UserX } from 'lucide-react';
+import { Button } from '../console-ui/button';
+import { Badge } from '../console-ui/badge';
+import { Input } from '../console-ui/input';
+import { SectionHeader } from '../console-ui/panel';
+import { GbLoading } from '../console-ui/loading';
+
+const ROLE_BADGE = { admin: 'destructive', operator: 'success', viewer: 'default' };
 
 /**
- * UserManagement - Admin-only component for managing users
- * Create, list, and update users (role, active status)
+ * UserManagement — admin-only user CRUD, wired to the real backend
+ * (/auth/register, /auth/users). Reskinned to the console's dark idiom;
+ * behavior unchanged.
  */
 export function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -24,7 +30,6 @@ export function UserManagement() {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch users on mount
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -44,18 +49,9 @@ export function UserManagement() {
     e.preventDefault();
     setFormError('');
     setFormLoading(true);
-
     try {
       await authPost(endpoints.register, formData);
-
-      // Reset form and refresh list
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        full_name: '',
-        role: 'viewer',
-      });
+      setFormData({ username: '', email: '', password: '', full_name: '', role: 'viewer' });
       setShowCreateForm(false);
       await fetchUsers();
     } catch (err) {
@@ -67,9 +63,7 @@ export function UserManagement() {
 
   const handleToggleActive = async (userId, currentStatus) => {
     try {
-      await authPatch(endpoints.userById(userId), {
-        is_active: !currentStatus,
-      });
+      await authPatch(endpoints.userById(userId), { is_active: !currentStatus });
       await fetchUsers();
     } catch (err) {
       console.error('Error updating user:', err);
@@ -78,258 +72,149 @@ export function UserManagement() {
 
   const handleChangeRole = async (userId, newRole) => {
     try {
-      await authPatch(endpoints.userById(userId), {
-        role: newRole,
-      });
+      await authPatch(endpoints.userById(userId), { role: newRole });
       await fetchUsers();
     } catch (err) {
       console.error('Error updating user role:', err);
     }
   };
 
-  const titleStyles = {
-    fontSize: tokens.typography.fontSize.xl,
-    fontWeight: tokens.typography.fontWeight.semibold,
-    color: tokens.colors.text.primary,
-    marginBottom: tokens.spacing.md,
-  };
-
-  const tableStyles = {
-    width: '100%',
-    borderCollapse: 'collapse',
-  };
-
-  const thStyles = {
-    padding: tokens.spacing.md,
-    textAlign: 'left',
-    fontSize: tokens.typography.fontSize.sm,
-    fontWeight: tokens.typography.fontWeight.medium,
-    color: tokens.colors.text.secondary,
-    borderBottom: `1px solid ${tokens.colors.neutral.border}`,
-  };
-
-  const tdStyles = {
-    padding: tokens.spacing.md,
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.primary,
-    borderBottom: `1px solid ${tokens.colors.neutral.border}`,
-  };
-
-  const badgeStyles = (role) => ({
-    display: 'inline-block',
-    padding: `${tokens.spacing.xs} ${tokens.spacing.sm}`,
-    borderRadius: tokens.borderRadius.md,
-    fontSize: tokens.typography.fontSize.xs,
-    fontWeight: tokens.typography.fontWeight.medium,
-    backgroundColor:
-      role === 'admin'
-        ? 'rgba(239, 68, 68, 0.15)'
-        : role === 'operator'
-        ? 'rgba(16, 185, 129, 0.15)'
-        : 'rgba(100, 116, 139, 0.15)',
-    color:
-      role === 'admin'
-        ? '#ef4444'
-        : role === 'operator'
-        ? tokens.colors.infosys.primary
-        : '#64748b',
-  });
-
-  const inputStyles = {
-    width: '100%',
-    padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
-    backgroundColor: tokens.colors.background.primary,
-    border: `1px solid ${tokens.colors.neutral.border}`,
-    borderRadius: tokens.borderRadius.md,
-    fontSize: tokens.typography.fontSize.sm,
-    color: tokens.colors.text.primary,
-    marginTop: tokens.spacing.xs,
-  };
-
-  const selectStyles = {
-    ...inputStyles,
-    cursor: 'pointer',
-  };
+  const selectClass =
+    'h-9 rounded-[6px] border border-gb-input bg-gb-background-2 px-2.5 text-[12.5px] text-gb-foreground outline-none focus-visible:border-gb-ring';
 
   if (loading) {
     return (
-      <Card>
-        <p style={{ color: tokens.colors.text.secondary }}>Loading users...</p>
-      </Card>
+      <div className="rounded-[8px] border border-gb-border bg-gb-card p-10">
+        <GbLoading label="Loading users…" />
+      </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing.lg }}>
-        <h2 style={titleStyles}>User Management</h2>
-        <Button
-          variant="primary"
-          icon={UserPlus}
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
+    <div className="rounded-[8px] border border-gb-border bg-gb-card p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <SectionHeader title="User Management" />
+        <Button variant={showCreateForm ? 'outline' : 'default'} size="sm" onClick={() => setShowCreateForm(!showCreateForm)}>
+          <UserPlus size={14} />
           {showCreateForm ? 'Cancel' : 'Create User'}
         </Button>
       </div>
 
       {showCreateForm && (
-        <Card style={{ marginBottom: tokens.spacing.lg }}>
-          <h3 style={{ ...titleStyles, fontSize: tokens.typography.fontSize.lg }}>Create New User</h3>
-
+        <form onSubmit={handleCreateUser} className="mb-5 rounded-[8px] border border-gb-border bg-gb-background-2 p-4">
           {formError && (
-            <div style={{
-              padding: tokens.spacing.md,
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: tokens.borderRadius.md,
-              color: '#ef4444',
-              fontSize: tokens.typography.fontSize.sm,
-              marginBottom: tokens.spacing.md,
-            }}>
+            <div className="mb-3 rounded-[6px] border border-gb-destructive/40 bg-gb-destructive/10 px-3 py-2 text-[12.5px] text-gb-destructive">
               {formError}
             </div>
           )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-[12px] text-gb-muted-foreground">
+              Username *
+              <Input
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+                placeholder="john.doe"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-gb-muted-foreground">
+              Email *
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                placeholder="john@gaborone.bw"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-gb-muted-foreground">
+              Password *
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Min 8 characters"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-gb-muted-foreground">
+              Full Name
+              <Input
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="John Doe"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-gb-muted-foreground sm:col-span-2">
+              Role *
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                required
+                className={selectClass}
+              >
+                <option value="viewer">Viewer</option>
+                <option value="operator">Operator</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+          </div>
 
-          <form onSubmit={handleCreateUser}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: tokens.spacing.md, marginBottom: tokens.spacing.md }}>
-              <div>
-                <label style={{ fontSize: tokens.typography.fontSize.sm, color: tokens.colors.text.primary }}>
-                  Username *
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    required
-                    style={inputStyles}
-                    placeholder="john.doe"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label style={{ fontSize: tokens.typography.fontSize.sm, color: tokens.colors.text.primary }}>
-                  Email *
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    style={inputStyles}
-                    placeholder="john@gaborone.bw"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label style={{ fontSize: tokens.typography.fontSize.sm, color: tokens.colors.text.primary }}>
-                  Password *
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    minLength={8}
-                    style={inputStyles}
-                    placeholder="Min 8 characters"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label style={{ fontSize: tokens.typography.fontSize.sm, color: tokens.colors.text.primary }}>
-                  Full Name
-                  <input
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    style={inputStyles}
-                    placeholder="John Doe"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label style={{ fontSize: tokens.typography.fontSize.sm, color: tokens.colors.text.primary }}>
-                  Role *
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    required
-                    style={selectStyles}
-                  >
-                    <option value="viewer">Viewer</option>
-                    <option value="operator">Operator</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={formLoading}
-              fullWidth
-            >
-              {formLoading ? 'Creating...' : 'Create User'}
-            </Button>
-          </form>
-        </Card>
+          <Button type="submit" disabled={formLoading} className="mt-4 w-full">
+            {formLoading ? 'Creating…' : 'Create User'}
+          </Button>
+        </form>
       )}
 
-      <Card>
-        <table style={tableStyles}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left">
           <thead>
             <tr>
-              <th style={thStyles}>Username</th>
-              <th style={thStyles}>Email</th>
-              <th style={thStyles}>Full Name</th>
-              <th style={thStyles}>Role</th>
-              <th style={thStyles}>Status</th>
-              <th style={thStyles}>Actions</th>
+              {['Username', 'Email', 'Full Name', 'Role', 'Status', 'Actions'].map((h) => (
+                <th key={h} className="border-b border-gb-border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-gb-muted-foreground">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td style={tdStyles}>{user.username}</td>
-                <td style={tdStyles}>{user.email}</td>
-                <td style={tdStyles}>{user.full_name || '-'}</td>
-                <td style={tdStyles}>
+            {users.map((u) => (
+              <tr key={u.id}>
+                <td className="border-b border-gb-border px-3 py-3 text-[13px] text-gb-foreground">{u.username}</td>
+                <td className="border-b border-gb-border px-3 py-3 text-[13px] text-gb-muted-foreground">{u.email}</td>
+                <td className="border-b border-gb-border px-3 py-3 text-[13px] text-gb-muted-foreground">{u.full_name || '—'}</td>
+                <td className="border-b border-gb-border px-3 py-3">
                   <select
-                    value={user.role}
-                    onChange={(e) => handleChangeRole(user.id, e.target.value)}
-                    style={{ ...selectStyles, marginTop: 0, padding: `${tokens.spacing.xs} ${tokens.spacing.sm}`, fontSize: tokens.typography.fontSize.xs }}
+                    value={u.role}
+                    onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                    className={`${selectClass} h-8 text-[11.5px]`}
                   >
                     <option value="viewer">Viewer</option>
                     <option value="operator">Operator</option>
                     <option value="admin">Admin</option>
                   </select>
                 </td>
-                <td style={tdStyles}>
-                  <span style={{
-                    ...badgeStyles(user.role),
-                    backgroundColor: user.is_active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    color: user.is_active ? tokens.colors.infosys.primary : '#ef4444',
-                  }}>
-                    {user.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                <td className="border-b border-gb-border px-3 py-3">
+                  <Badge variant={u.is_active ? 'success' : ROLE_BADGE[u.role] || 'default'}>
+                    {u.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
                 </td>
-                <td style={tdStyles}>
+                <td className="border-b border-gb-border px-3 py-3">
                   <Button
-                    variant={user.is_active ? 'danger' : 'secondary'}
+                    variant={u.is_active ? 'destructive' : 'outline'}
                     size="sm"
-                    icon={user.is_active ? UserX : UserCheck}
-                    onClick={() => handleToggleActive(user.id, user.is_active)}
+                    onClick={() => handleToggleActive(u.id, u.is_active)}
                   >
-                    {user.is_active ? 'Deactivate' : 'Activate'}
+                    {u.is_active ? <UserX size={13} /> : <UserCheck size={13} />}
+                    {u.is_active ? 'Deactivate' : 'Activate'}
                   </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </Card>
+      </div>
     </div>
   );
 }

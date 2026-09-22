@@ -28,6 +28,8 @@ export const endpoints = {
   // Statistics endpoints
   crashesByYear: `${API_URL}/stats/crashes-by-year`,
   crashesBySeverity: `${API_URL}/stats/crashes-by-severity`,
+  roadUserFatalities: `${API_URL}/stats/road-user-fatalities`,
+  greaterGaboroneCrashes: `${API_URL}/stats/greater-gaborone-crashes`,
 
   // Generic multi-camera endpoints
   cameras: `${API_URL}/cameras`,

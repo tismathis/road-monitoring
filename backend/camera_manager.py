@@ -20,6 +20,7 @@ from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 
 from camera_config import CAMERA_BY_ID, CameraConfig, CLASS_MAP
+import crash_detection
 
 
 # =====================================================================
@@ -319,17 +320,30 @@ def process_tracking_mode(frame, config: CameraConfig, state: CameraState):
                     "h": float(bh)
                 })
 
-    # Count each tracked object once
+    # Count each tracked object once, and feed this frame's tracked boxes to
+    # the crash-candidate detector (needs persistent track IDs, which is why
+    # crash detection only runs in tracking mode, not SAHI/parking mode).
     if results[0].boxes is not None and results[0].boxes.id is not None:
         ids = results[0].boxes.id.cpu().numpy()
         clss = results[0].boxes.cls.cpu().numpy()
+        xyxy = results[0].boxes.xyxy.cpu().numpy()
+        h, w = frame.shape[:2]
+
+        tracked = []
         with state.counts_lock:
-            for track_id, cls_id in zip(ids, clss):
+            for track_id, cls_id, box in zip(ids, clss, xyxy):
                 tid = int(track_id)
+                name = CLASS_MAP.get(int(cls_id), "other")
                 if tid not in state.seen_track_ids:
                     state.seen_track_ids.add(tid)
-                    name = CLASS_MAP.get(int(cls_id), "other")
                     state.counts[name] = state.counts.get(name, 0) + 1
+                tracked.append({
+                    "track_id": tid,
+                    "class_name": name,
+                    "box": (box[0] / w, box[1] / h, box[2] / w, box[3] / h),
+                })
+
+        crash_detection.update(config.id, tracked)
 
     return annotated
 

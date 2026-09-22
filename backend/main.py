@@ -9,6 +9,8 @@ import time
 # Import unified camera manager
 from camera_manager import start_all_cameras, get_camera_state, CAMERA_STATES, calculate_traffic_kpis, calculate_parking_kpis
 from camera_config import CAMERAS, CAMERA_BY_ID
+import crash_detection
+from national_road_safety_data import ROAD_USER_FATALITY_SHARE_2021, GREATER_GABORONE_DISTRICT_CRASHES_2021
 
 # Import authentication router and dependencies
 from auth import router as auth_router
@@ -80,6 +82,7 @@ def list_cameras():
             "last_frame_time": state.last_frame_time if state else 0,
             "thumbnail_url": f"/cameras/{cam_id}/stream",
             "stats_preview": stats_preview,
+            "road_node_id": config.road_node_id,
         })
 
     return result
@@ -184,14 +187,31 @@ def generic_camera_kpis(camera_id: str):
 
 @app.get("/cameras/{camera_id}/crash-signal", dependencies=[Depends(require_role(["operator", "admin"]))])
 def generic_camera_crash_signal(camera_id: str):
-    """Placeholder for future crash detection signals"""
-    return {
-        "camera_id": camera_id,
-        "crash_detected": False,
-        "confidence": 0.0,
-        "timestamp": None,
-        "message": "Crash detection not yet implemented"
-    }
+    """
+    Crash-candidate signal for a camera, from the Ijjina et al. reimplementation
+    in crash_detection.py (see CRASH_DETECTION_PIPELINE.md for the full
+    paper-to-code mapping).
+
+    Only cameras in tracking mode (persistent track IDs) support this —
+    SAHI/parking cameras return crash_detected: false with an explanatory
+    message rather than a fabricated signal.
+    """
+    config = CAMERA_BY_ID.get(camera_id)
+    if not config:
+        return {"error": "Camera not found"}
+
+    if config.detection_mode != "tracking":
+        return {
+            "camera_id": camera_id,
+            "crash_detected": False,
+            "confidence": 0.0,
+            "components": None,
+            "track_ids": [],
+            "timestamp": None,
+            "message": "Crash detection requires persistent track IDs (tracking mode); not applicable to this camera.",
+        }
+
+    return crash_detection.get_signal(camera_id)
 
 
 # =====================================================================
@@ -344,30 +364,74 @@ def get_historical_crashes():
 
 @app.get("/stats/crashes-by-year", dependencies=[Depends(get_current_user)])
 def crashes_by_year():
+    """
+    Real, cited Botswana national road-accident trend by year — see
+    ROAD_SAFETY_DATA_SOURCES.md and national_road_safety_data.py for the
+    exact source of every field. 2012-2021 are complete-year figures published by
+    Statistics Botswana; 2022-2024 are a lower-confidence news-sourced
+    extension (2024 is partial-year, Jan-24 Nov only — see is_partial_year).
+    """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT year, COUNT(*) as total, SUM(fatalities) as fatalities
-        FROM historical_crashes
-        GROUP BY year
+        SELECT year, accidents, fatalities, casualties, serious_injuries, minor_injuries,
+               is_estimate, is_partial_year, source
+        FROM national_crash_stats
         ORDER BY year;
     """)
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    # Turn into a list of dicts — the shape Recharts expects
-    return [{"year": r[0], "total": r[1], "fatalities": r[2]} for r in rows]
+    return [
+        {
+            "year": r[0],
+            "total": r[1],
+            "fatalities": r[2],
+            "casualties": r[3],
+            "serious_injuries": r[4],
+            "minor_injuries": r[5],
+            "is_estimate": r[6],
+            "is_partial_year": r[7],
+            "source": r[8],
+        }
+        for r in rows
+    ]
 
 @app.get("/stats/crashes-by-severity", dependencies=[Depends(get_current_user)])
 def crashes_by_severity():
+    """
+    Real crash-severity breakdown (fatal / serious / minor / damage-only
+    crashes — not casualties) for 2021, the one year the source report
+    publishes this split. See national_road_safety_data.py for the citation.
+    """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT severity, COUNT(*) as total
-        FROM historical_crashes
-        GROUP BY severity;
+        SELECT year, fatal_crashes, serious_crashes, minor_crashes, damage_only_crashes, source
+        FROM national_crash_stats
+        WHERE fatal_crashes IS NOT NULL
+        ORDER BY year DESC
+        LIMIT 1;
     """)
-    rows = cur.fetchall()
+    row = cur.fetchone()
     cur.close()
     conn.close()
-    return [{"severity": r[0], "total": r[1]} for r in rows]
+    if not row:
+        return []
+    year, fatal, serious, minor, damage_only, source = row
+    return [
+        {"severity": "fatal", "total": fatal, "year": year, "source": source},
+        {"severity": "serious_injury", "total": serious, "year": year, "source": source},
+        {"severity": "minor", "total": minor, "year": year, "source": source},
+        {"severity": "damage_only", "total": damage_only, "year": year, "source": source},
+    ]
+
+@app.get("/stats/road-user-fatalities", dependencies=[Depends(get_current_user)])
+def road_user_fatalities():
+    """Real 2021 fatality breakdown by road-user type (WHO-sourced)."""
+    return ROAD_USER_FATALITY_SHARE_2021
+
+@app.get("/stats/greater-gaborone-crashes", dependencies=[Depends(get_current_user)])
+def greater_gaborone_crashes():
+    """Real 2021 crash counts for the two Greater Gaborone police districts."""
+    return GREATER_GABORONE_DISTRICT_CRASHES_2021

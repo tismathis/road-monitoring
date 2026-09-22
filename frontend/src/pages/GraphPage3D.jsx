@@ -1,28 +1,93 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
-import { Network, AlertTriangle, RotateCcw, Play, Pause } from 'lucide-react';
+import { Network, AlertTriangle, RotateCcw, Play, Pause, Video, VideoOff } from 'lucide-react';
 
 import { ConsoleLayout } from '../layouts/ConsoleLayout';
 import { mockGraphNodes, mockGraphLinks } from '../utils/mockData';
+import { useCrashSignals } from '../hooks/useCrashSignals';
 import { useTranslation } from '../i18n/LanguageContext';
 import { Button } from '../components/console-ui/button';
 import { Badge } from '../components/console-ui/badge';
 import { DetailRow, SectionHeader } from '../components/console-ui/panel';
+import {
+  ALERT_RGB,
+  NORMAL_RGB,
+  LINK_RGB,
+  getAlertMotion,
+  recordAlertTransition,
+  lerpColor,
+  rgbToCss,
+  rgbToHex,
+} from '../utils/graphAlertMotion';
 
-const NODE_NORMAL = '#007CC3';
-const NODE_ALERT = '#E5484D';
-const LINK_NORMAL = '#5A6B75';
+const NODE_NORMAL_HEX = rgbToHex(NORMAL_RGB);
+const NODE_ALERT_HEX = rgbToHex(ALERT_RGB);
+
+/**
+ * Builds the group of THREE objects for one node: a solid core sphere, a
+ * soft backside glow shell (the existing motif), and a radar-pulse shell —
+ * the 3D analogue of the 2D canvas's expanding ring / .gb-radar-ring.
+ * A flat 2D ring has no single "facing" once the camera can orbit freely,
+ * so the pulse is an expanding, fading wireframe shell instead — same
+ * timing/easing as the 2D view, adapted to a true-3D renderer.
+ */
+function createAlertVisualObjects(initialHex) {
+  const coreGeom = new THREE.SphereGeometry(5, 32, 32);
+  const coreMat = new THREE.MeshPhongMaterial({
+    color: initialHex,
+    emissive: initialHex,
+    emissiveIntensity: 0.4,
+    shininess: 100,
+    transparent: true,
+    opacity: 0.9,
+  });
+  const core = new THREE.Mesh(coreGeom, coreMat);
+
+  const glowGeom = new THREE.SphereGeometry(8, 32, 32);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: initialHex,
+    transparent: true,
+    opacity: 0.2,
+    side: THREE.BackSide,
+  });
+  const glow = new THREE.Mesh(glowGeom, glowMat);
+
+  const shellGeom = new THREE.SphereGeometry(5, 24, 24);
+  const shellMat = new THREE.MeshBasicMaterial({
+    color: NODE_ALERT_HEX,
+    transparent: true,
+    opacity: 0,
+    wireframe: true,
+    depthWrite: false,
+  });
+  const shell = new THREE.Mesh(shellGeom, shellMat);
+
+  const group = new THREE.Group();
+  group.add(glow, core, shell);
+
+  return { group, core, coreMat, glow, glowMat, shell, shellMat };
+}
 
 export function GraphPage3D() {
   const { t } = useTranslation();
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [selectedNode, setSelectedNode] = useState(null);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [simulationRunning, setSimulationRunning] = useState(true);
   const graphRef = useRef();
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ w: 1200, h: 700 });
+
+  const graphDataRef = useRef(graphData);
+  const nodeObjectsRef = useRef(new Map()); // nodeId -> THREE objects from createAlertVisualObjects
+  const alertTransitionsRef = useRef(new Map());
+  const monitoredNodeIdsRef = useRef(new Set());
+
+  const signalsByNode = useCrashSignals(2000);
+
+  useEffect(() => {
+    graphDataRef.current = graphData;
+  }, [graphData]);
 
   useEffect(() => {
     const nodes = mockGraphNodes.map((node) => ({
@@ -33,6 +98,24 @@ export function GraphPage3D() {
     }));
     setGraphData({ nodes, links: mockGraphLinks.map((link) => ({ ...link })) });
   }, []);
+
+  // Real crash-candidate signal replaces all simulated/random alert data.
+  // Only nodes with a camera actually mapped to them change state — every
+  // other node stays neutral, permanently.
+  useEffect(() => {
+    monitoredNodeIdsRef.current = new Set(Object.keys(signalsByNode));
+    const now = performance.now();
+    setGraphData((prev) => ({
+      ...prev,
+      nodes: prev.nodes.map((node) => {
+        const signal = signalsByNode[node.id];
+        if (!signal) return node;
+        const nextAlert = !!signal.crash_detected;
+        recordAlertTransition(alertTransitionsRef.current, node.id, node.hasAlert, nextAlert, now);
+        return { ...node, hasAlert: nextAlert, crashSignal: signal };
+      }),
+    }));
+  }, [signalsByNode]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -55,54 +138,54 @@ export function GraphPage3D() {
     return () => clearInterval(interval);
   }, [autoRotate]);
 
+  // Drives the alert ignition/pulse/crossfade on every created node's THREE
+  // objects, every frame — independent of graph physics or camera rotation,
+  // and using the same motion language as the 2D canvas view.
   useEffect(() => {
-    if (!simulationRunning) return;
-    const interval = setInterval(() => {
-      setGraphData((prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((node) => ({
-          ...node,
-          hasAlert: Math.random() < 0.15 ? !node.hasAlert : node.hasAlert,
-        })),
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [simulationRunning]);
+    let raf;
+    const tick = () => {
+      const now = performance.now();
+      const nodesById = new Map(graphDataRef.current.nodes.map((n) => [n.id, n]));
+
+      nodeObjectsRef.current.forEach((objs, nodeId) => {
+        const node = nodesById.get(nodeId);
+        if (!node) return;
+
+        const { color, colorT, ignitionScale, pulsePhase } = getAlertMotion(
+          alertTransitionsRef.current.get(nodeId),
+          node.hasAlert,
+          now
+        );
+        const hex = rgbToHex(color);
+
+        objs.coreMat.color.setHex(hex);
+        objs.coreMat.emissive.setHex(hex);
+        objs.coreMat.emissiveIntensity = 0.4 + 0.5 * colorT;
+        objs.glowMat.color.setHex(hex);
+        objs.glowMat.opacity = 0.2 + 0.3 * colorT;
+
+        objs.core.scale.setScalar(ignitionScale);
+        objs.glow.scale.setScalar(ignitionScale);
+
+        if (pulsePhase != null) {
+          objs.shell.scale.setScalar(1 + 1.8 * pulsePhase);
+          objs.shellMat.opacity = 0.45 * (1 - pulsePhase);
+        } else {
+          objs.shellMat.opacity = 0;
+        }
+      });
+
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const createNodeObject = useCallback((node) => {
-    const isAlert = node.hasAlert;
-    const color = isAlert ? NODE_ALERT : NODE_NORMAL;
-
-    const group = new THREE.Group();
-
-    const geometry = new THREE.SphereGeometry(isAlert ? 8 : 5, 32, 32);
-    const material = new THREE.MeshPhongMaterial({
-      color,
-      emissive: color,
-      emissiveIntensity: isAlert ? 0.8 : 0.4,
-      shininess: 100,
-      transparent: true,
-      opacity: 0.9,
-    });
-    group.add(new THREE.Mesh(geometry, material));
-
-    const glowGeometry = new THREE.SphereGeometry(isAlert ? 12 : 8, 32, 32);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: isAlert ? 0.3 : 0.2,
-      side: THREE.BackSide,
-    });
-    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-    group.add(glow);
-
-    if (isAlert) {
-      const time = Date.now() * 0.001;
-      const scale = 1 + Math.sin(time * 3) * 0.1;
-      glow.scale.set(scale, scale, scale);
-    }
-
-    return group;
+    const initialHex = node.hasAlert ? NODE_ALERT_HEX : NODE_NORMAL_HEX;
+    const objs = createAlertVisualObjects(initialHex);
+    nodeObjectsRef.current.set(node.id, objs);
+    return objs.group;
   }, []);
 
   const handleNodeClick = useCallback((node) => {
@@ -120,25 +203,25 @@ export function GraphPage3D() {
     setSelectedNode(null);
   };
 
-  const toggleNodeAlert = (nodeId) => {
-    setGraphData((prev) => ({
-      ...prev,
-      nodes: prev.nodes.map((node) => (node.id === nodeId ? { ...node, hasAlert: !node.hasAlert } : node)),
-    }));
-  };
-
   const alertCount = graphData.nodes.filter((n) => n.hasAlert).length;
+  const monitoredCount = Object.keys(signalsByNode).length;
 
-  const linkColor = (link) => {
-    const s = graphData.nodes.find((n) => n.id === (link.source.id || link.source));
-    const tg = graphData.nodes.find((n) => n.id === (link.target.id || link.target));
-    return s?.hasAlert || tg?.hasAlert ? NODE_ALERT : LINK_NORMAL;
-  };
-  const linkAlert = (link) => {
-    const s = graphData.nodes.find((n) => n.id === (link.source.id || link.source));
-    const tg = graphData.nodes.find((n) => n.id === (link.target.id || link.target));
-    return !!(s?.hasAlert || tg?.hasAlert);
-  };
+  const nodeColorT = useCallback(
+    (endpoint) => {
+      const id = endpoint?.id ?? endpoint;
+      const node = graphData.nodes.find((n) => n.id === id);
+      if (!node) return 0;
+      return getAlertMotion(alertTransitionsRef.current.get(id), node.hasAlert, performance.now()).colorT;
+    },
+    [graphData.nodes]
+  );
+  const linkAlertT = useCallback((link) => Math.max(nodeColorT(link.source), nodeColorT(link.target)), [nodeColorT]);
+
+  const linkColor = useCallback((link) => rgbToCss(lerpColor(LINK_RGB, ALERT_RGB, linkAlertT(link))), [linkAlertT]);
+  const linkWidth = useCallback((link) => 0.5 + 2 * linkAlertT(link), [linkAlertT]);
+  const linkParticleCount = useCallback((link) => (linkAlertT(link) > 0.4 ? 4 : 1), [linkAlertT]);
+  const linkParticleWidth = useCallback((link) => (linkAlertT(link) > 0.4 ? 3 : 1), [linkAlertT]);
+  const linkParticleColor = useCallback((link) => rgbToCss(lerpColor(NORMAL_RGB, ALERT_RGB, linkAlertT(link))), [linkAlertT]);
 
   return (
     <ConsoleLayout title={t('graph.neural3d')}>
@@ -154,13 +237,14 @@ export function GraphPage3D() {
             <span className="text-gb-border">•</span>
             <span className="gb-num font-semibold text-gb-foreground">{graphData.links.length}</span>
             <span>{t('graph.connections')}</span>
+            <span className="text-gb-border">•</span>
+            <Video size={14} />
+            <span className="gb-num font-semibold text-gb-foreground">{monitoredCount}</span>
+            <span>{t('graph.liveMonitored')}</span>
           </div>
           <Button variant={autoRotate ? 'default' : 'outline'} size="sm" onClick={() => setAutoRotate(!autoRotate)}>
             {autoRotate ? <Pause size={14} /> : <Play size={14} />}
             {autoRotate ? 'Pause' : 'Rotation'}
-          </Button>
-          <Button variant={simulationRunning ? 'destructive' : 'outline'} size="sm" onClick={() => setSimulationRunning(!simulationRunning)}>
-            {simulationRunning ? t('graph.stopSimulation') : t('graph.startSimulation')}
           </Button>
           <Button variant="outline" size="sm" onClick={resetView}>
             <RotateCcw size={14} />
@@ -176,12 +260,12 @@ export function GraphPage3D() {
             nodeThreeObject={createNodeObject}
             nodeThreeObjectExtend
             linkColor={linkColor}
-            linkWidth={(link) => (linkAlert(link) ? 2 : 0.5)}
+            linkWidth={linkWidth}
             linkOpacity={0.6}
-            linkDirectionalParticles={(link) => (linkAlert(link) ? 4 : 1)}
-            linkDirectionalParticleWidth={(link) => (linkAlert(link) ? 3 : 1)}
+            linkDirectionalParticles={linkParticleCount}
+            linkDirectionalParticleWidth={linkParticleWidth}
             linkDirectionalParticleSpeed={0.005}
-            linkDirectionalParticleColor={(link) => (linkAlert(link) ? NODE_ALERT : NODE_NORMAL)}
+            linkDirectionalParticleColor={linkParticleColor}
             onNodeClick={handleNodeClick}
             enableNodeDrag={false}
             showNavInfo={false}
@@ -199,19 +283,19 @@ export function GraphPage3D() {
           <SectionHeader title={t('map.legend')} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: NODE_ALERT, boxShadow: `0 0 8px ${NODE_ALERT}80` }} />
+              <span className="size-2.5 rounded-full" style={{ background: rgbToCss(ALERT_RGB), boxShadow: `0 0 8px ${rgbToCss(ALERT_RGB, 0.5)}` }} />
               {t('graph.accidentActive')}
             </div>
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: NODE_NORMAL, boxShadow: `0 0 8px ${NODE_NORMAL}80` }} />
+              <span className="size-2.5 rounded-full" style={{ background: rgbToCss(NORMAL_RGB), boxShadow: `0 0 8px ${rgbToCss(NORMAL_RGB, 0.5)}` }} />
               {t('graph.normalRoad')}
             </div>
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="h-[2px] w-8" style={{ background: NODE_ALERT }} />
+              <span className="h-[2px] w-8" style={{ background: rgbToCss(ALERT_RGB) }} />
               {t('graph.alertConnection')}
             </div>
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="h-px w-8" style={{ background: LINK_NORMAL }} />
+              <span className="h-px w-8" style={{ background: rgbToCss(LINK_RGB) }} />
               {t('graph.normalConnection')}
             </div>
           </div>
@@ -226,13 +310,17 @@ export function GraphPage3D() {
                   {selectedNode.hasAlert ? t('graph.activeAlert') : t('graph.trafficNormal')}
                 </Badge>
               </div>
-              <Button
-                variant={selectedNode.hasAlert ? 'destructive' : 'default'}
-                size="sm"
-                onClick={() => toggleNodeAlert(selectedNode.id)}
-              >
-                {selectedNode.hasAlert ? t('graph.disableAlert') : t('graph.simulateAlert')}
-              </Button>
+              <Badge variant="outline" className="flex items-center gap-1.5">
+                {monitoredNodeIdsRef.current.has(selectedNode.id) ? (
+                  <>
+                    <Video size={12} /> {t('graph.liveMonitored')}
+                  </>
+                ) : (
+                  <>
+                    <VideoOff size={12} /> {t('graph.noCamera')}
+                  </>
+                )}
+              </Badge>
             </div>
             <DetailRow label={t('graph.roadId')} value={<span className="gb-num">{selectedNode.id}</span>} />
             <DetailRow label={t('graph.type')} value={t(`road.${selectedNode.type}`)} />
@@ -241,6 +329,12 @@ export function GraphPage3D() {
               value={selectedNode.hasAlert ? t('graph.detected') : t('graph.normalTraffic')}
               valueClassName={selectedNode.hasAlert ? 'text-gb-destructive' : 'text-gb-success'}
             />
+            {selectedNode.crashSignal && selectedNode.crashSignal.components && (
+              <DetailRow
+                label={t('graph.confidence')}
+                value={<span className="gb-num">{Math.round(selectedNode.crashSignal.confidence * 100)}%</span>}
+              />
+            )}
           </div>
         )}
 

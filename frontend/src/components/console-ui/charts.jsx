@@ -52,17 +52,49 @@ export function ChartHeader({ title, action }) {
   );
 }
 
-export function GbBarChart({ data, dataKey, xKey, title, color = 'var(--gb-primary)', height = 260 }) {
+export function GbBarChart({ data, dataKey, xKey, title, color = 'var(--gb-primary)', height = 260, getOpacity, action }) {
   return (
     <div>
-      <ChartHeader title={title} />
+      <ChartHeader title={title} action={action} />
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
           <XAxis dataKey={xKey} tick={axisTick} stroke={gridStroke} tickLine={false} axisLine={{ stroke: gridStroke }} />
           <YAxis tick={axisTick} stroke={gridStroke} tickLine={false} axisLine={false} />
           <Tooltip {...tooltipStyle} cursor={{ fill: 'var(--gb-accent)' }} />
-          <Bar dataKey={dataKey} fill={color} radius={[3, 3, 0, 0]} maxBarSize={40} />
+          <Bar dataKey={dataKey} fill={color} radius={[3, 3, 0, 0]} maxBarSize={40}>
+            {getOpacity && data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fillOpacity={getOpacity(entry)} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function GbStackedBarChart({ data, bars, xKey, title, height = 260, action }) {
+  return (
+    <div>
+      <ChartHeader title={title} action={action} />
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+          <XAxis dataKey={xKey} tick={axisTick} stroke={gridStroke} tickLine={false} axisLine={{ stroke: gridStroke }} />
+          <YAxis tick={axisTick} stroke={gridStroke} tickLine={false} axisLine={false} />
+          <Tooltip {...tooltipStyle} cursor={{ fill: 'var(--gb-accent)' }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: 'var(--gb-muted-foreground)', paddingTop: 8 }} iconType="circle" iconSize={8} />
+          {bars.map((bar, index) => (
+            <Bar
+              key={bar.dataKey}
+              dataKey={bar.dataKey}
+              name={bar.name || bar.dataKey}
+              stackId="stack"
+              fill={bar.color || GB_CHART_PALETTE[index % GB_CHART_PALETTE.length]}
+              radius={index === bars.length - 1 ? [3, 3, 0, 0] : 0}
+              maxBarSize={40}
+            />
+          ))}
         </BarChart>
       </ResponsiveContainer>
     </div>

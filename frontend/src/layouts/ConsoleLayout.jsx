@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Map as MapIcon,
@@ -28,32 +28,47 @@ import {
   TooltipTrigger,
 } from '../components/console-ui/tooltip';
 import { NemopointMark } from '../components/console-ui/nemopoint-mark';
+import BranchedMenu from '../components/console-ui/BranchedMenu';
 
-const NAV_GROUPS = [
-  {
-    tick: false,
-    items: [
-      { id: 'dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard', short: 'Dash', route: '/dashboard' },
-      { id: 'map', icon: MapIcon, labelKey: 'nav.map', short: 'Map', route: '/map' },
-    ],
-  },
-  {
-    tick: true,
-    items: [
-      { id: 'incidents', icon: AlertTriangle, labelKey: 'nav.events', short: 'Alerts', route: '/incidents' },
-      { id: 'camera-wall', icon: Grid3x3, labelKey: 'nav.cameraWall', short: 'Wall', route: '/camera-wall' },
-      { id: 'camera', icon: Video, labelKey: 'nav.camera', short: 'Live', route: '/camera' },
-    ],
-  },
-  {
-    tick: false,
-    items: [
-      { id: 'graph', icon: Network, labelKey: 'nav.graph2d', short: 'Graph', route: '/graph' },
-      { id: 'graph3d', icon: Box, labelKey: 'nav.graph3d', short: '3D', route: '/graph3d' },
-      { id: 'stats', icon: LineChart, labelKey: 'nav.statistics', short: 'Stats', route: '/stats' },
-    ],
-  },
-];
+const NAV_ICON_SIZE = 16;
+
+function buildNavBranches(t) {
+  return [
+    {
+      label: t('nav.groupControlPanel'),
+      children: [
+        { value: '/dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={NAV_ICON_SIZE} /> },
+        { value: '/map', label: t('nav.map'), icon: <MapIcon size={NAV_ICON_SIZE} /> },
+        { value: '/camera-wall', label: t('nav.cameraWall'), icon: <Grid3x3 size={NAV_ICON_SIZE} /> },
+        { value: '/camera', label: t('nav.camera'), icon: <Video size={NAV_ICON_SIZE} /> },
+      ],
+    },
+    {
+      label: t('nav.groupUrgent'),
+      children: [
+        { value: '/incidents', label: t('nav.events'), icon: <AlertTriangle size={NAV_ICON_SIZE} /> },
+        { value: '/graph', label: t('nav.graph2d'), icon: <Network size={NAV_ICON_SIZE} /> },
+        { value: '/graph3d', label: t('nav.graph3d'), icon: <Box size={NAV_ICON_SIZE} /> },
+      ],
+    },
+    {
+      label: t('nav.groupStats'),
+      children: [
+        { value: '/stats', label: t('nav.statistics'), icon: <LineChart size={NAV_ICON_SIZE} /> },
+      ],
+    },
+  ];
+}
+
+/** Longest matching item value for the current path (handles sub-routes like /camera/:id). */
+function findActiveValue(branches, pathname) {
+  const values = branches.flatMap((b) => b.children.map((c) => c.value));
+  return (
+    values
+      .filter((v) => pathname === v || pathname.startsWith(`${v}/`))
+      .sort((a, b) => b.length - a.length)[0] ?? ''
+  );
+}
 
 function useLiveClock(locale) {
   const [now, setNow] = useState(() => new Date());
@@ -74,6 +89,7 @@ export function ConsoleLayout({ title, zone = 'Gaborone CBD', noPadding = false,
   const { t, language, setLanguage, locale } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const cameras = useCameraList(15000);
   const clock = useLiveClock(locale);
 
@@ -81,61 +97,54 @@ export function ConsoleLayout({ title, zone = 'Gaborone CBD', noPadding = false,
   const totalCameras = cameras.length;
   const allOnline = totalCameras > 0 && onlineCameras === totalCameras;
 
+  const navBranches = useMemo(() => buildNavBranches(t), [t]);
+  const activeValue = useMemo(() => findActiveValue(navBranches, location.pathname), [navBranches, location.pathname]);
+  const settingsActive = location.pathname === '/settings';
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="gb-console flex h-screen w-screen overflow-hidden text-[14px]">
-        {/* ICON RAIL */}
-        <aside className="gb-grid-texture flex w-[76px] flex-none flex-col items-center gap-1 border-r border-gb-border bg-gb-surface py-4">
-          <NavLink to="/dashboard" className="mb-5 flex flex-col items-center gap-1.5">
-            <span className="flex size-9 items-center justify-center rounded-[7px] bg-gb-primary/10">
+        {/* NAV RAIL */}
+        <aside className="gb-grid-texture flex w-[240px] flex-none flex-col gap-4 overflow-y-auto border-r border-gb-border bg-gb-surface px-4 py-4">
+          <NavLink to="/dashboard" className="flex items-center gap-2.5 px-1">
+            <span className="flex size-9 flex-none items-center justify-center rounded-[7px] bg-gb-primary/10">
               <NemopointMark size={26} />
             </span>
-            <span className="text-[8.5px] font-semibold uppercase tracking-[0.08em] text-gb-muted-foreground/70">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-gb-muted-foreground/70">
               Watch
             </span>
           </NavLink>
 
-          {NAV_GROUPS.map((group, i) => (
-            <div key={i} className={group.tick ? 'gb-route-tick w-full py-2.5' : 'contents'}>
-              <div className="flex flex-col items-center gap-1.5">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.id}
-                    to={item.route}
-                    aria-label={t(item.labelKey)}
-                    title={t(item.labelKey)}
-                    className={({ isActive }) =>
-                      `flex w-16 flex-col items-center gap-1 rounded-[7px] py-1.5 transition-colors ${
-                        isActive
-                          ? 'bg-gb-primary/12 text-gb-primary'
-                          : 'text-gb-muted-foreground hover:bg-gb-accent hover:text-gb-foreground'
-                      }`
-                    }
-                  >
-                    <item.icon size={19} strokeWidth={2} />
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.06em]">{item.short}</span>
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
+          <BranchedMenu
+            items={navBranches}
+            defaultOpen={[0, 1, 2]}
+            defaultActive={activeValue}
+            onSelect={(value) => navigate(value)}
+            color="var(--gb-foreground)"
+            accentColor="var(--gb-primary)"
+            lineColor="var(--gb-border)"
+            width={208}
+            rowHeight={34}
+            indent={36}
+            trunk={12}
+            radius={9}
+            lineWidth={1.5}
+            fontSize={13}
+            drawDuration={400}
+            foldDuration={300}
+          />
 
-          <div className="mt-auto flex flex-col items-center gap-1.5">
-            <NavLink
-              to="/settings"
-              title={t('nav.settings')}
-              className={({ isActive }) =>
-                `flex w-16 flex-col items-center gap-1 rounded-[7px] py-1.5 transition-colors ${
-                  isActive
-                    ? 'bg-gb-primary/12 text-gb-primary'
-                    : 'text-gb-muted-foreground hover:bg-gb-accent hover:text-gb-foreground'
-                }`
-              }
-            >
-              <Settings size={19} strokeWidth={2} />
-              <span className="text-[9px] font-semibold uppercase tracking-[0.06em]">Setup</span>
-            </NavLink>
-          </div>
+          <NavLink
+            to="/settings"
+            className={`mt-auto flex items-center gap-2 rounded-[7px] px-2.5 py-2 text-[13px] transition-colors ${
+              settingsActive
+                ? 'bg-gb-primary/12 text-gb-primary'
+                : 'text-gb-muted-foreground hover:bg-gb-accent hover:text-gb-foreground'
+            }`}
+          >
+            <Settings size={16} />
+            {t('nav.settings')}
+          </NavLink>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">

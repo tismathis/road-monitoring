@@ -127,19 +127,23 @@ export const mockKeyMetrics = {
   zonesMonitored: 1,
 };
 
-// Mock graph data for 3D network visualization
-// Nodes represent road segments
+// Mock graph data for the network visualization — road-segment topology
+// only (names/layout/links are illustrative, not sourced from PostGIS).
+// hasAlert always starts false: real alert state is driven live by
+// useCrashSignals() from the actual camera-mapped crash detector, not
+// seeded here. A node with no camera mapped to it (backend/camera_config.py
+// road_node_id) simply never gets a hasAlert update and stays neutral.
 export const mockGraphNodes = [
   { id: 'A1', name: 'Main Mall', type: 'main_road', hasAlert: false },
-  { id: 'A2', name: 'Independence Ave', type: 'main_road', hasAlert: true },
+  { id: 'A2', name: 'Independence Ave', type: 'main_road', hasAlert: false },
   { id: 'A3', name: 'Queens Road', type: 'main_road', hasAlert: false },
   { id: 'A4', name: 'Khama Crescent', type: 'secondary_road', hasAlert: false },
-  { id: 'A5', name: 'Broadhurst', type: 'secondary_road', hasAlert: true },
+  { id: 'A5', name: 'Broadhurst', type: 'secondary_road', hasAlert: false },
   { id: 'A6', name: 'The Mall', type: 'main_road', hasAlert: false },
   { id: 'A7', name: 'Government Enclave', type: 'secondary_road', hasAlert: false },
   { id: 'A8', name: 'Gaborone West', type: 'residential', hasAlert: false },
   { id: 'A9', name: 'CBD North', type: 'main_road', hasAlert: false },
-  { id: 'A10', name: 'A1 Highway Exit', type: 'highway', hasAlert: true },
+  { id: 'A10', name: 'A1 Highway Exit', type: 'highway', hasAlert: false },
   { id: 'A11', name: 'Old Naledi', type: 'residential', hasAlert: false },
   { id: 'A12', name: 'Extension 2', type: 'residential', hasAlert: false },
   { id: 'A13', name: 'Industrial Area', type: 'industrial', hasAlert: false },
@@ -168,14 +172,3 @@ export const mockGraphLinks = [
   { source: 'A14', target: 'A15', traffic: 'low' },
   { source: 'A15', target: 'A6', traffic: 'medium' },
 ];
-
-// Function to randomly toggle alerts (for demo)
-export function getGraphDataWithRandomAlerts() {
-  const nodes = mockGraphNodes.map(node => ({
-    ...node,
-    // Keep existing alerts or randomly add new ones (20% chance)
-    hasAlert: node.hasAlert || Math.random() < 0.2,
-  }));
-
-  return { nodes, links: mockGraphLinks };
-}

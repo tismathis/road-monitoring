@@ -1,17 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { Network, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Video, VideoOff } from 'lucide-react';
 
 import { ConsoleLayout } from '../layouts/ConsoleLayout';
 import { mockGraphNodes, mockGraphLinks } from '../utils/mockData';
+import { useCrashSignals } from '../hooks/useCrashSignals';
 import { useTranslation } from '../i18n/LanguageContext';
 import { Button } from '../components/console-ui/button';
 import { Badge } from '../components/console-ui/badge';
 import { DetailRow, SectionHeader } from '../components/console-ui/panel';
+import {
+  ALERT_RGB,
+  NORMAL_RGB,
+  LINK_RGB,
+  getAlertMotion,
+  recordAlertTransition,
+  lerpColor,
+  rgbToCss,
+} from '../utils/graphAlertMotion';
 
-const NODE_NORMAL = '#007CC3';
-const NODE_ALERT = '#E5484D';
-const LINK_COLOR = 'rgba(180, 205, 222, 0.35)';
+const NODE_BASE_RADIUS = 5;
 
 export function GraphPage() {
   const { t } = useTranslation();
@@ -21,6 +29,13 @@ export function GraphPage() {
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ w: 1200, h: 600 });
 
+  // nodeId -> { ignitedAt?, clearedAt? } in performance.now() ms, read every
+  // draw frame by getAlertMotion() to time the ignition/pulse/crossfade.
+  const alertTransitionsRef = useRef(new Map());
+  const monitoredNodeIdsRef = useRef(new Set());
+
+  const signalsByNode = useCrashSignals(2000);
+
   useEffect(() => {
     setGraphData({
       nodes: mockGraphNodes.map((node) => ({ ...node })),
@@ -28,18 +43,24 @@ export function GraphPage() {
     });
   }, []);
 
+  // Real crash-candidate signal replaces all simulated/random alert data.
+  // Only nodes with a camera actually mapped to them (backend
+  // camera_config.py road_node_id) ever change state here — every other
+  // node stays neutral, permanently.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setGraphData((prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((node) => ({
-          ...node,
-          hasAlert: Math.random() < 0.1 ? !node.hasAlert : node.hasAlert,
-        })),
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    monitoredNodeIdsRef.current = new Set(Object.keys(signalsByNode));
+    const now = performance.now();
+    setGraphData((prev) => ({
+      ...prev,
+      nodes: prev.nodes.map((node) => {
+        const signal = signalsByNode[node.id];
+        if (!signal) return node;
+        const nextAlert = !!signal.crash_detected;
+        recordAlertTransition(alertTransitionsRef.current, node.id, node.hasAlert, nextAlert, now);
+        return { ...node, hasAlert: nextAlert, crashSignal: signal };
+      }),
+    }));
+  }, [signalsByNode]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -51,13 +72,6 @@ export function GraphPage() {
 
   const handleNodeClick = (node) => setSelectedNode(node);
 
-  const toggleNodeAlert = (nodeId) => {
-    setGraphData((prev) => ({
-      ...prev,
-      nodes: prev.nodes.map((node) => (node.id === nodeId ? { ...node, hasAlert: !node.hasAlert } : node)),
-    }));
-  };
-
   const resetView = () => {
     if (graphRef.current) {
       graphRef.current.centerAt(0, 0, 1000);
@@ -66,8 +80,94 @@ export function GraphPage() {
     setSelectedNode(null);
   };
 
-  const getNodeColor = (node) => (node.hasAlert ? NODE_ALERT : NODE_NORMAL);
+  const nodeRadius = (node) => {
+    const now = performance.now();
+    const { ignitionScale } = getAlertMotion(alertTransitionsRef.current.get(node.id), node.hasAlert, now);
+    return NODE_BASE_RADIUS * (node.hasAlert ? 1.3 : 1) * ignitionScale;
+  };
+
+  const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
+    const now = performance.now();
+    const { color, colorT, ignitionScale, pulsePhase } = getAlertMotion(
+      alertTransitionsRef.current.get(node.id),
+      node.hasAlert,
+      now
+    );
+    const r = NODE_BASE_RADIUS * (node.hasAlert ? 1.3 : 1) * ignitionScale;
+
+    // Radar-style expanding ring while actively alerting — the same
+    // 2.4s ease-out cadence as .gb-radar-ring elsewhere in the console.
+    if (pulsePhase != null) {
+      const ringR = r * (1 + 1.6 * pulsePhase);
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, ringR, 0, 2 * Math.PI);
+      ctx.strokeStyle = rgbToCss(ALERT_RGB, 0.5 * (1 - pulsePhase));
+      ctx.lineWidth = 1.5 / globalScale;
+      ctx.stroke();
+    }
+
+    // Soft radial glow, only while alerting or crossfading — not a flat
+    // color swap, and not present on normal nodes.
+    if (colorT > 0.02) {
+      const glowR = r * 2.6;
+      const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
+      grad.addColorStop(0, rgbToCss(ALERT_RGB, 0.32 * colorT));
+      grad.addColorStop(1, rgbToCss(ALERT_RGB, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, glowR, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // Small "live camera" ring for a monitored node, independent of alert
+    // state — an honest visual cue for which nodes even have real data.
+    if (monitoredNodeIdsRef.current.has(node.id)) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r + 2.5 / globalScale, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(241,246,248,0.35)';
+      ctx.lineWidth = 1 / globalScale;
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fillStyle = rgbToCss(color);
+    ctx.fill();
+    ctx.lineWidth = 1 / globalScale;
+    ctx.strokeStyle = 'rgba(11,15,18,0.55)';
+    ctx.stroke();
+  }, []);
+
+  const nodePointerAreaPaint = useCallback((node, color, ctx) => {
+    const r = nodeRadius(node) + 3;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fill();
+  }, []);
+
+  const linkNodeColorT = useCallback(
+    (endpoint) => {
+      const id = endpoint?.id ?? endpoint;
+      const node = graphData.nodes.find((n) => n.id === id);
+      if (!node) return 0;
+      return getAlertMotion(alertTransitionsRef.current.get(id), node.hasAlert, performance.now()).colorT;
+    },
+    [graphData.nodes]
+  );
+
+  const linkAlertT = useCallback(
+    (link) => Math.max(linkNodeColorT(link.source), linkNodeColorT(link.target)),
+    [linkNodeColorT]
+  );
+
+  const linkColor = useCallback((link) => rgbToCss(lerpColor(LINK_RGB, ALERT_RGB, linkAlertT(link)), 0.35 + 0.45 * linkAlertT(link)), [linkAlertT]);
+  const linkWidth = useCallback((link) => 1.5 + 1.5 * linkAlertT(link), [linkAlertT]);
+  const linkParticleCount = useCallback((link) => (linkAlertT(link) > 0.4 ? 4 : 2), [linkAlertT]);
+  const linkParticleColor = useCallback((link) => rgbToCss(lerpColor(NORMAL_RGB, ALERT_RGB, linkAlertT(link))), [linkAlertT]);
+
   const alertCount = graphData.nodes.filter((n) => n.hasAlert).length;
+  const monitoredCount = Object.keys(signalsByNode).length;
 
   return (
     <ConsoleLayout title={t('graph.road2d')}>
@@ -83,6 +183,10 @@ export function GraphPage() {
             <span className="text-gb-border">•</span>
             <span className="gb-num font-semibold text-gb-foreground">{graphData.links.length}</span>
             <span>{t('graph.connections')}</span>
+            <span className="text-gb-border">•</span>
+            <Video size={14} />
+            <span className="gb-num font-semibold text-gb-foreground">{monitoredCount}</span>
+            <span>{t('graph.liveMonitored')}</span>
           </div>
           <Button variant="outline" onClick={resetView}>
             {t('graph.resetView')}
@@ -94,14 +198,13 @@ export function GraphPage() {
             ref={graphRef}
             graphData={graphData}
             nodeLabel={(node) => `${node.name} (${node.id})`}
-            nodeColor={getNodeColor}
-            nodeRelSize={6}
-            nodeVal={(node) => (node.hasAlert ? 1.5 : 1)}
-            linkColor={() => LINK_COLOR}
-            linkWidth={1.5}
-            linkDirectionalParticles={2}
+            nodeCanvasObject={nodeCanvasObject}
+            nodePointerAreaPaint={nodePointerAreaPaint}
+            linkColor={linkColor}
+            linkWidth={linkWidth}
+            linkDirectionalParticles={linkParticleCount}
             linkDirectionalParticleWidth={2}
-            linkDirectionalParticleColor={() => NODE_NORMAL}
+            linkDirectionalParticleColor={linkParticleColor}
             onNodeClick={handleNodeClick}
             enableNodeDrag
             enablePanInteraction
@@ -125,12 +228,16 @@ export function GraphPage() {
           <SectionHeader title={t('map.legend')} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: NODE_ALERT }} />
+              <span className="size-2.5 rounded-full" style={{ background: rgbToCss(ALERT_RGB) }} />
               {t('graph.accidentAlert')}
             </div>
             <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
-              <span className="size-2.5 rounded-full" style={{ background: NODE_NORMAL }} />
+              <span className="size-2.5 rounded-full" style={{ background: rgbToCss(NORMAL_RGB) }} />
               {t('graph.normalRoad')}
+            </div>
+            <div className="flex items-center gap-2 text-[12.5px] text-gb-muted-foreground">
+              <span className="size-2.5 rounded-full border border-white/35" />
+              {t('graph.liveMonitoredRing')}
             </div>
           </div>
         </div>
@@ -144,13 +251,17 @@ export function GraphPage() {
                   {selectedNode.hasAlert ? t('graph.activeAlert') : t('graph.normal')}
                 </Badge>
               </div>
-              <Button
-                variant={selectedNode.hasAlert ? 'destructive' : 'default'}
-                size="sm"
-                onClick={() => toggleNodeAlert(selectedNode.id)}
-              >
-                {selectedNode.hasAlert ? t('graph.disableAlert') : t('graph.simulateAlert')}
-              </Button>
+              <Badge variant="outline" className="flex items-center gap-1.5">
+                {monitoredNodeIdsRef.current.has(selectedNode.id) ? (
+                  <>
+                    <Video size={12} /> {t('graph.liveMonitored')}
+                  </>
+                ) : (
+                  <>
+                    <VideoOff size={12} /> {t('graph.noCamera')}
+                  </>
+                )}
+              </Badge>
             </div>
 
             <DetailRow label={t('graph.segmentId')} value={<span className="gb-num">{selectedNode.id}</span>} />
@@ -160,6 +271,26 @@ export function GraphPage() {
               value={selectedNode.hasAlert ? t('graph.accidentDetected') : t('graph.normalTraffic')}
               valueClassName={selectedNode.hasAlert ? 'text-gb-destructive' : 'text-gb-success'}
             />
+            {selectedNode.crashSignal && selectedNode.crashSignal.components && (
+              <>
+                <DetailRow
+                  label={t('graph.confidence')}
+                  value={<span className="gb-num">{Math.round(selectedNode.crashSignal.confidence * 100)}%</span>}
+                />
+                <DetailRow
+                  label={t('graph.accelerationAnomaly')}
+                  value={<span className="gb-num">{selectedNode.crashSignal.components.acceleration_anomaly.toFixed(2)}</span>}
+                />
+                <DetailRow
+                  label={t('graph.trajectoryAnomaly')}
+                  value={<span className="gb-num">{selectedNode.crashSignal.components.trajectory_anomaly.toFixed(2)}</span>}
+                />
+                <DetailRow
+                  label={t('graph.angleChangeAnomaly')}
+                  value={<span className="gb-num">{selectedNode.crashSignal.components.angle_change_anomaly.toFixed(2)}</span>}
+                />
+              </>
+            )}
           </div>
         )}
       </div>

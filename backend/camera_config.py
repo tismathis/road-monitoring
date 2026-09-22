@@ -44,6 +44,15 @@ class CameraConfig:
     # Metadata
     total_parking_spots: Optional[int] = None  # Only for parking cameras
 
+    # Network-graph wiring: which road-segment node (frontend mockGraphNodes
+    # id) this camera actually observes, for real crash-signal -> node alert
+    # mapping. None means "no live camera monitors this node" — the node
+    # stays in its normal/neutral state rather than simulating an alert.
+    # Explicit and hand-set on purpose: with only a couple of real cameras,
+    # an "automatic" geolocation-based mapping would be pretending to more
+    # precision than a single uncalibrated camera view actually supports.
+    road_node_id: Optional[str] = None
+
 
 # =====================================================================
 # CENTRAL CAMERA REGISTRY
@@ -64,6 +73,9 @@ CAMERAS: List[CameraConfig] = [
         track_classes=[0, 1, 2, 3, 5, 7],  # person, bicycle, car, motorcycle, bus, truck
         tracker_config="custom_bytetrack.yaml",
         position=(-24.6282, 25.9231),
+        # "Main St & Independence Ave" -> node A2 ("Independence Ave") in
+        # the network graph's road-segment list (frontend/src/utils/mockData.js).
+        road_node_id="A2",
     ),
 
     # Parking Lot Camera - CBD Parking
